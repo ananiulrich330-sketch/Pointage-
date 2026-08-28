@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointer - Pointage Khalif</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center">
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Pointage Employé</h1>
+        <p class="text-sm text-slate-500 mb-6">Enregistrez votre arrivée ou votre départ en un clic.</p>
+
+        <!-- Formulaire de pointage -->
+        <div class="space-y-4 text-left">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nom et Prénom</label>
+                <input type="text" id="nomEmploye" placeholder="Ex: Jean Kouassi" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="flex gap-4 pt-2">
+                <button onclick="pointer('arrivee')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl shadow transition">
+                    Pointer Arrivée
+                </button>
+                <button onclick="pointer('depart')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-medium py-3 rounded-xl shadow transition">
+                    Pointer Départ
+                </button>
+            </div>
+        </div>
+
+        <p id="feedback" class="text-sm mt-6 font-medium"></p>
+    </div>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQzyST3m4eWC2_8fDwoLHEIbIhHM3cwq0",
+            authDomain: "pointage-khalif.firebaseapp.com",
+            databaseURL: "https://pointage-khalif-default-rtdb.firebaseio.com",
+            projectId: "pointage-khalif",
+            storageBucket: "pointage-khalif.appspot.com",
+            messagingSenderId: "56869339015",
+            appId: "1:56869339015:web:d9097c0d29d5ae6e5b142",
+            measurementId: "G-XM50FB3EP0"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function pointer(type) {
+            const nomInput = document.getElementById('nomEmploye');
+            const feedback = document.getElementById('feedback');
+            const nom = nomInput.value.trim();
+
+            if (!nom) {
+                feedback.className = "text-sm mt-6 font-medium text-rose-600";
+                feedback.textContent = "Veuillez entrer votre nom.";
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const heureActuelle = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:MM
+            const employeKey = nom.replace(/\s+/g, '_');
+            const refEmploye = database.ref('pointages/' + todayStr + '/' + employeKey);
+
+            refEmploye.once('snapshot', (snapshot) => {}) // Vérification rapide
+            
+            if (type === 'arrivee') {
+                refEmploye.update({
+                    employe: nom,
+                    arrivee: heureActuelle
+                }, (error) => {
+                    if (error) {
+                        feedback.className = "text-sm mt-6 font-medium text-rose-600";
+                        feedback.textContent = "Erreur lors du pointage.";
+                    } else {
+                        feedback.className = "text-sm mt-6 font-medium text-emerald-600";
+                        feedback.textContent = `Arrivée enregistrée avec succès à ${heureActuelle} !`;
+                    }
+                });
+            } else {
+                refEmploye.update({
+                    employe: nom,
+                    depart: heureActuelle
+                }, (error) => {
+                    if (error) {
+                        feedback.className = "text-sm mt-6 font-medium text-rose-600";
+                        feedback.textContent = "Erreur lors du pointage.";
+                    } else {
+                        feedback.className = "text-sm mt-6 font-medium text-emerald-600";
+                        feedback.textContent = `Départ enregistré avec succès à ${heureActuelle} !`;
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
