@@ -1,900 +1,164 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pointage — Khalif Ingénierie</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-  :root{
-    --bg:#F5F6FA;
-    --panel:#FFFFFF;
-    --ink:#12172B;
-    --ink-soft:#6B7280;
-    --accent:#3654F5;
-    --accent-dark:#2740D6;
-    --accent-soft:#EEF0FF;
-    --slate:#64748B;
-    --slate-dark:#475467;
-    --line:#E7E8F0;
-    --ok:#16A34A;
-    --ok-soft:#EAF8EF;
-    --err:#DC2626;
-    --err-soft:#FDECEC;
-    --shadow-sm:0 1px 2px rgba(17,24,39,.04);
-    --shadow-lg:0 16px 40px -12px rgba(17,24,39,.14);
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    font-family:'Inter', sans-serif;
-    color:var(--ink);
-    min-height:100vh;
-    padding:32px 16px 60px;
-  }
-  .wrap{max-width:480px; margin:0 auto;}
-
-  .eyebrow{
-    font-family:'Space Grotesk', sans-serif;
-    font-size:12px;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    font-weight:600;
-    display:flex; align-items:center; gap:8px;
-  }
-  .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;}
-
-  .clock{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:52px;
-    font-weight:600;
-    letter-spacing:-.01em;
-    color:var(--ink);
-    margin:10px 0 2px;
-    line-height:1;
-    font-variant-numeric:tabular-nums;
-  }
-  .clock-date{
-    font-family:'Inter', sans-serif;
-    font-size:13.5px;
-    color:var(--ink-soft);
-    text-transform:capitalize;
-    margin-bottom:12px;
-  }
-  .clock-progress{
-    height:3px; width:100%; background:var(--line); border-radius:2px;
-    margin-bottom:26px; overflow:hidden;
-  }
-  .clock-progress-fill{
-    height:100%; width:0%; background:var(--accent);
-    transition:width 1s linear;
-  }
-
-  .card{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:20px;
-    box-shadow:var(--shadow-sm), var(--shadow-lg);
-    padding:26px 24px 4px;
-    position:relative;
-  }
-
-  label.field-label{
-    font-family:'Space Grotesk', sans-serif;
-    font-size:11px;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    font-weight:600;
-    display:block;
-    margin-bottom:7px;
-  }
-  select.name-select, input.name-select{
-    width:100%;
-    padding:13px 14px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:15px;
-    border:1.5px solid var(--line);
-    border-radius:12px;
-    background:var(--bg);
-    color:var(--ink);
-    margin-bottom:18px;
-    appearance:none;
-    transition:border-color .15s ease, box-shadow .15s ease;
-  }
-  select.name-select:focus, input.name-select:focus{
-    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);
-  }
-  input.name-select{letter-spacing:.3em;}
-
-  .lock-note{
-    font-family:'Inter', sans-serif;
-    font-size:12.5px;
-    font-weight:500;
-    color:var(--err);
-    background:var(--err-soft);
-    border-radius:10px;
-    padding:9px 12px;
-    margin:-8px 0 16px;
-    display:none;
-  }
-  .lock-note.show{display:block;}
-
-  .punch-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:0;}
-  .punch-btn{
-    font-family:'Space Grotesk', sans-serif;
-    font-weight:600;
-    font-size:15px;
-    letter-spacing:.01em;
-    padding:16px 8px;
-    border:none;
-    border-radius:12px;
-    cursor:pointer;
-    color:#fff;
-    transition:transform .08s ease, filter .12s ease;
-  }
-  .punch-btn:hover{filter:brightness(1.06);}
-  .punch-btn:active{transform:scale(.97);}
-  .punch-btn.arrivee{background:var(--accent);}
-  .punch-btn.arrivee:hover{background:var(--accent-dark);}
-  .punch-btn.depart{background:var(--slate);}
-  .punch-btn.depart:hover{background:var(--slate-dark);}
-  .punch-btn:disabled{opacity:.4; cursor:not-allowed; filter:none;}
-
-  .status-msg{
-    min-height:20px;
-    font-family:'Inter', sans-serif;
-    font-size:13px;
-    font-weight:500;
-    text-align:center;
-    margin:16px 0 0;
-    color:var(--ok);
-  }
-  .status-msg.error{color:var(--err);}
-
-  /* title block, signature element */
-  .titleblock{
-    margin:22px -24px 0;
-    border-top:1px solid var(--line);
-    display:grid;
-    grid-template-columns:1fr 1fr;
-  }
-  .tb-cell{
-    padding:14px 16px;
-    border-right:1px solid var(--line);
-    border-bottom:1px solid var(--line);
-    position:relative;
-    overflow:hidden;
-  }
-  .tb-cell:nth-child(2n){border-right:none;}
-  .tb-cell:nth-last-child(-n+2){border-bottom:none;}
-  .tb-label{
-    font-family:'Space Grotesk', sans-serif;
-    font-size:9.5px;
-    letter-spacing:.09em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    font-weight:600;
-    display:block;
-    margin-bottom:4px;
-  }
-  .tb-value{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:14px;
-    font-weight:500;
-  }
-  .stamp{
-    position:absolute; top:11px; right:12px;
-    display:inline-flex; align-items:center; gap:4px;
-    font-family:'Space Grotesk', sans-serif;
-    font-weight:600; font-size:9.5px; letter-spacing:.04em;
-    padding:3px 8px;
-    border-radius:999px;
-    background:var(--ok-soft);
-    color:var(--ok);
-    transform:scale(0);
-    opacity:0;
-    transition:transform .2s cubic-bezier(.34,1.56,.64,1), opacity .15s;
-  }
-  .stamp.show{transform:scale(1); opacity:1;}
-  .stamp.depart{background:#EEF1F6; color:var(--slate-dark);}
-
-  /* QR panel */
-  .qr-panel{
-    margin-top:20px;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:16px;
-    box-shadow:var(--shadow-sm);
-    padding:18px;
-    display:flex; gap:16px; align-items:center;
-  }
-  .qr-panel #qr-target{flex:0 0 auto; line-height:0; border-radius:8px; overflow:hidden;}
-  .qr-panel #qr-target img, .qr-panel #qr-target canvas{display:block;}
-  .qr-text{font-family:'Inter', sans-serif; font-size:12px; color:var(--ink-soft); line-height:1.5;}
-
-  .admin-toggle{
-    margin-top:20px;
-    text-align:center;
-  }
-  .admin-toggle button{
-    background:none; border:none; cursor:pointer;
-    font-family:'Space Grotesk', sans-serif;
-    font-size:11.5px; letter-spacing:.04em;
-    color:var(--ink-soft);
-  }
-  .admin-toggle button:hover{color:var(--accent);}
-
-  /* modal */
-  .overlay{
-    position:fixed; inset:0; background:rgba(17,23,43,.5);
-    display:none; align-items:flex-start; justify-content:center;
-    padding:40px 16px; overflow-y:auto; z-index:50;
-  }
-  .overlay.show{display:flex;}
-  .modal{
-    background:var(--panel); border:1px solid var(--line); border-radius:20px;
-    box-shadow:var(--shadow-lg);
-    max-width:560px; width:100%; padding:24px;
-  }
-  .modal h2{
-    font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0 0 16px;
-    display:flex; justify-content:space-between; align-items:center;
-  }
-  .modal h2 button{background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink-soft);}
-  .pin-input{
-    width:100%; padding:13px; font-family:'IBM Plex Mono',monospace; font-size:18px;
-    letter-spacing:.3em; text-align:center; border:1.5px solid var(--line); border-radius:12px; margin-bottom:10px;
-    background:var(--bg);
-  }
-  .pin-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
-  .btn{
-    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13px;
-    padding:10px 18px; border:none; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer;
-    transition:filter .12s ease;
-  }
-  .btn:hover{filter:brightness(1.08);}
-  .btn.secondary{background:var(--panel); color:var(--ink); border:1.5px solid var(--line);}
-  .btn.small{padding:7px 12px; font-size:11.5px; border-radius:8px;}
-  .row-flex{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-
-  table.tpl{width:100%; border-collapse:collapse; margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
-  table.tpl th, table.tpl td{border-bottom:1px solid var(--line); padding:9px 6px; text-align:left;}
-  table.tpl th{font-family:'Space Grotesk',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft);}
-  .empty-row td{color:var(--ink-soft); font-style:italic;}
-
-  .emp-row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line);}
-  .emp-row .emp-name{font-family:'Inter', sans-serif; font-weight:500; font-size:13px; flex:1 1 auto; min-width:140px;}
-  .emp-row input.emp-pin{
-    width:80px; font-family:'IBM Plex Mono', monospace; padding:6px 8px; border:1.5px solid var(--line); border-radius:8px; font-size:12.5px; letter-spacing:.15em; text-align:center; background:var(--bg);
-  }
-  .emp-row input.emp-pin:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
-  .emp-row button.rmEmp{background:none;border:none;color:var(--err);cursor:pointer;font-weight:700; font-size:16px; line-height:1;}
-  .emp-row button.savePinRow{
-    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:10.5px;
-    padding:6px 10px; border:none; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer;
-  }
-  .emp-row button.savePinRow:disabled{opacity:.35; cursor:not-allowed;}
-  .emp-row button.pdfPinRow{
-    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:10.5px;
-    padding:6px 10px; border:1.5px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink-soft); cursor:pointer;
-  }
-  .emp-row button.pdfPinRow:hover{border-color:var(--accent); color:var(--accent);}
-  .emp-row .pin-saved{font-size:10px; color:var(--ok); font-family:'Inter',sans-serif; font-weight:500;}
-
-  input[type=text], input[type=date]{
-    font-family:'IBM Plex Mono', monospace; padding:10px; border:1.5px solid var(--line); border-radius:10px; font-size:13px; background:var(--bg);
-  }
-  input[type=text]:focus, input[type=date]:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
-  .section-title{font-family:'Space Grotesk',sans-serif; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600; margin:20px 0 10px;}
-  .hint{font-size:11.5px; color:var(--ink-soft); font-family:'Inter',sans-serif; margin-top:6px; line-height:1.5;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointage — Khalif Ingénierie</title>
+    <!-- Tailwind CSS pour un design propre -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="wrap">
+<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
 
-  <div class="eyebrow">Khalif Ingénierie · Registre de présence</div>
-  <div class="clock" id="clock">--:--:--</div>
-  <div class="clock-date" id="clock-date">—</div>
-  <div class="clock-progress"><div class="clock-progress-fill" id="clockProgress"></div></div>
+    <!-- En-tête / Heure -->
+    <div class="max-w-xl mx-auto px-4 py-8 w-full">
+        <div class="text-center mb-8">
+            <span class="text-xs font-semibold tracking-wider text-indigo-600 uppercase">Khalif Ingénierie • Registre de présence</span>
+            <div id="clock" class="text-4xl font-extrabold text-gray-900 mt-2">--:--:--</div>
+            <div id="date" class="text-sm text-gray-500 mt-1">-</div>
+        </div>
 
-  <div class="card">
-    <label class="field-label">Nom de l'employé</label>
-    <select class="name-select" id="nameSelect">
-      <option value="">— sélectionner —</option>
-    </select>
+        <!-- Formulaire de pointage -->
+        <div class="bg-white shadow rounded-2xl p-6 border border-gray-100">
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Nom de l'employé</label>
+            
+            <select id="employeSelect" class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-4">
+                <option value="">— sélectionner —</option>
+            </select>
 
-    <label class="field-label">Code PIN</label>
-    <input type="text" class="name-select" id="punchPin" maxlength="6" inputmode="numeric" placeholder="••••">
+            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Code PIN (optionnel)</label>
+            <input type="password" id="pinInput" placeholder="...." class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-6 tracking-widest text-center text-lg">
 
-    <div class="lock-note" id="lockNote">Cet employé a déjà pointé son arrivée aujourd'hui.</div>
+            <div class="grid grid-cols-2 gap-4">
+                <button id="btnArrivee" class="bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition">ARRIVÉE</button>
+                <button id="btnDepart" class="bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-700 transition">DÉPART</button>
+            </div>
+        </div>
 
-    <div class="punch-row">
-      <button class="punch-btn arrivee" id="btnArrivee">ARRIVÉE</button>
-      <button class="punch-btn depart" id="btnDepart">DÉPART</button>
+        <!-- Dernier statut affiché -->
+        <div class="bg-white shadow rounded-2xl p-6 border border-gray-100 mt-6">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="block text-xs text-gray-400 uppercase">Nom</span>
+                    <span id="statutNom" class="font-medium text-gray-800">—</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400 uppercase">Statut</span>
+                    <span id="statutType" class="font-medium text-gray-800">—</span>
+                </div>
+                <div class="mt-4">
+                    <span class="block text-xs text-gray-400 uppercase">Date</span>
+                    <span id="statutDate" class="font-medium text-gray-800">—</span>
+                </div>
+                <div class="mt-4">
+                    <span class="block text-xs text-gray-400 uppercase">Heure</span>
+                    <span id="statutHeure" class="font-medium text-gray-800">—</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="status-msg" id="statusMsg"></div>
+    <!-- Scripts Firebase et Logique -->
+    <script type="module">
+        // Importation de Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    <div class="titleblock">
-      <div class="tb-cell">
-        <span class="tb-label">Nom</span>
-        <span class="tb-value" id="tbName">—</span>
-      </div>
-      <div class="tb-cell">
-        <span class="tb-label">Statut</span>
-        <span class="tb-value" id="tbStatus">—</span>
-        <span class="stamp" id="stampEl">✓ POINTÉ</span>
-      </div>
-      <div class="tb-cell">
-        <span class="tb-label">Date</span>
-        <span class="tb-value" id="tbDate">—</span>
-      </div>
-      <div class="tb-cell">
-        <span class="tb-label">Heure</span>
-        <span class="tb-value" id="tbTime">—</span>
-      </div>
-    </div>
-  </div>
+        // Configuration Firebase (tes clés)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQzystm4eWC2_8fdWoLHFThThhM3cwq0",
+            authDomain: "pointage-khalif.firebaseapp.com",
+            databaseURL: "https://pointage-khalif-default-rtdb.firebaseio.com",
+            projectId: "pointage-khalif",
+            storageBucket: "pointage-khalif.appspot.com",
+            messagingSenderId: "568693399015",
+            appId: "1:568693399015:web:d9097c0d29dd5ae6e5b142",
+            measurementId: "G-XM50BF3EP0"
+        };
 
-  <div class="qr-panel">
-    <div id="qr-target"></div>
-    <div class="qr-text">Ce badge se scanne avec l'appareil photo du téléphone.<br>Scannez pour pointer votre arrivée ou votre départ.</div>
-  </div>
+        // Initialisation de Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-  <div class="admin-toggle">
-    <button id="openAdmin">Espace responsable (Secrétaire / DG)</button>
-  </div>
-</div>
+        // Liste complète des employés
+        const listeEmployes = [
+            "Khalif",
+            "Anani Ulrich",
+            "Jean",
+            "ASSALE Anabelle",
+            "BOKA Axel",
+            "GBE Keani Elue Excelle",
+            "GOUAN Fiacre",
+            "KOUAKOU Carole",
+            "OULAI Tiemoko Perside",
+            "OUEDRAOGO Nicanor",
+            "OYEKALE Samuel Sunday",
+            "SEDE Mleanin Cecile",
+            "TEHA Kouyo Franck",
+            "YOLOU Bleda Sandrine",
+            "WAYOU Claude Sostherne",
+            "ADOPO Jorim",
+            "TAPE Marie-Emmanuelle",
+            "CAMARA Alpha",
+            "KOFFI Israel",
+            "OPKO Michel"
+        ];
 
-<!-- ADMIN OVERLAY -->
-<div class="overlay" id="adminOverlay">
-  <div class="modal" id="pinModal">
-    <h2>Espace responsable <button id="closePin">✕</button></h2>
-    <label class="field-label">Code PIN</label>
-    <input type="text" class="pin-input" id="pinInput" maxlength="6" placeholder="••••">
-    <div class="status-msg error" id="pinMsg"></div>
-    <div class="row-flex">
-      <button class="btn" id="pinSubmit">Déverrouiller</button>
-    </div>
-    <p class="hint">Code par défaut : 2026. Modifiable une fois connecté, dans l'onglet Réglages.</p>
-  </div>
+        // Remplissage automatique du menu déroulant au chargement
+        document.addEventListener("DOMContentLoaded", () => {
+            const selectElement = document.getElementById("employeSelect");
+            
+            if (selectElement) {
+                listeEmployes.sort(); // Tri alphabétique
+                listeEmployes.forEach(nom => {
+                    const option = document.createElement("option");
+                    option.value = nom;
+                    option.textContent = nom;
+                    selectElement.appendChild(option);
+                });
+            }
 
-  <div class="modal" id="dashModal" style="display:none; max-width:640px;">
-    <h2>Registre — Espace responsable <button id="closeDash">✕</button></h2>
+            // Mise à jour de l'heure en direct
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('clock').textContent = now.toLocaleTimeString('fr-FR');
+                document.getElementById('date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }, 1000);
+        });
 
-    <div class="row-flex">
-      <button class="btn small" data-tab="pointages">Pointages en direct</button>
-      <button class="btn small secondary" data-tab="employes">Employés</button>
-      <button class="btn small secondary" data-tab="reglages">Réglages</button>
-    </div>
+        // Gestion des clics sur Arrivée / Départ
+        document.getElementById('btnArrivee').addEventListener('click', () => enregistrerPointage('ARRIVÉE'));
+        document.getElementById('btnDepart').addEventListener('click', () => enregistrerPointage('DÉPART'));
 
-    <div id="tab-pointages">
-      <div class="section-title">Consulter une date</div>
-      <input type="date" id="dashDate">
-      <table class="tpl" id="dashTable">
-        <thead><tr><th>Employé</th><th>Arrivée</th><th>Départ</th><th>Total</th></tr></thead>
-        <tbody id="dashBody"></tbody>
-      </table>
-      <div class="row-flex" style="margin-top:14px;">
-        <button class="btn small" id="downloadCahierBtn">Télécharger le cahier du jour (Word)</button>
-      </div>
-      <p class="hint">Se met à jour instantanément dès qu'un employé pointe depuis son téléphone.</p>
-    </div>
+        function enregistrerPointage(type) {
+            const nom = document.getElementById('employeSelect').value;
+            if (!nom) {
+                alert("Veuillez sélectionner un employé dans la liste !");
+                return;
+            }
 
-    <div id="tab-employes" style="display:none;">
-      <div class="section-title">Liste du personnel &amp; codes PIN</div>
-      <p class="hint">Le PIN par défaut d'un nouvel employé est <b>0000</b>.</p>
-      <div id="empList"></div>
-      <div class="row-flex" style="margin-top:12px;">
-        <input type="text" id="newEmpName" placeholder="Nom complet">
-        <button class="btn small" id="addEmpBtn">Ajouter</button>
-      </div>
-    </div>
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('fr-FR');
+            const heureStr = now.toLocaleTimeString('fr-FR');
 
-    <div id="tab-reglages" style="display:none;">
-      <div class="section-title">Changer le code PIN responsable</div>
-      <div class="row-flex">
-        <input type="text" id="newPin" maxlength="6" placeholder="Nouveau code">
-        <button class="btn small" id="savePinBtn">Enregistrer</button>
-      </div>
-      <p class="hint" id="pinSaveMsg"></p>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDQzyST3m4eWC2_8fDwoLHEIbIHhM3cwq0",
-  authDomain: "pointage-khalif.firebaseapp.com",
-  databaseURL: "https://pointage-khalif-default-rtdb.firebaseio.com",
-  projectId: "pointage-khalif",
-  storageBucket: "pointage-khalif.firebasestorage.app",
-  messagingSenderId: "568693399015",
-  appId: "1:568693399015:web:d9097c0d29dd5ae6e5b142",
-  measurementId: "G-XM50FB3EP0"
-};
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  window.storage = {
-    get: async function(key, isJson) {
-      try {
-        const snap = await getDoc(doc(db, "app_data", key));
-        if (snap.exists()) {
-          return { value: snap.data().val };
+            // Envoi vers Firebase Realtime Database
+            const pointagesRef = ref(db, 'pointages');
+            push(pointagesRef, {
+                employe: nom,
+                statut: type,
+                date: dateStr,
+                heure: heureStr,
+                timestamp: Date.now()
+            }).then(() => {
+                // Affichage dans l'encadré de confirmation
+                document.getElementById('statutNom').textContent = nom;
+                document.getElementById('statutType').textContent = type;
+                document.getElementById('statutDate').textContent = dateStr;
+                document.getElementById('statutHeure').textContent = heureStr;
+                alert(`Pointage (${type}) enregistré avec succès pour ${nom} !`);
+            }).catch((error) => {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+            });
         }
-        return null;
-      } catch (e) {
-        console.error("Firestore get error:", e);
-        return null;
-      }
-    },
-    set: async function(key, value, isJson) {
-      try {
-        await setDoc(doc(db, "app_data", key), { val: value });
-        return true;
-      } catch (e) {
-        console.error("Firestore set error:", e);
-        throw e;
-      }
-    }
-  };
-
-const DEFAULT_PIN = "2026";
-const DEFAULT_EMP_PIN = "0000";
-let employees = [];
-let currentTab = 'pointages';
-let unsubscribeDash = null;
-
-function pad(n){return n.toString().padStart(2,'0');}
-function todayKey(d=new Date()){return `pointages_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-function timeStr(d=new Date()){return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
-function dateStrLong(d=new Date()){
-  return d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-}
-
-function tickClock(){
-  const now = new Date();
-  document.getElementById('clock').textContent = timeStr(now);
-  document.getElementById('clock-date').textContent = dateStrLong(now);
-  const pct = (now.getSeconds() / 60) * 100;
-  document.getElementById('clockProgress').style.width = pct + '%';
-}
-setInterval(tickClock, 1000);
-tickClock();
-
-try{
-  new QRCode(document.getElementById('qr-target'), {
-    text: window.location.href,
-    width: 96, height: 96,
-    colorDark: "#12172B", colorLight: "#FFFFFF"
-  });
-}catch(e){ console.error('QR generation failed', e); }
-
-const DEFAULT_EMPLOYEE_NAMES = [
-  "ASSALE ANABELLE","BOKA AXEL","GBE KEANI ELUE EXCELLE","GOUAN FIACRE",
-  "KOUAKOU CAROLE","OULAI TIEMOKO PERSIDE","OUEDRAOGO NICANOR","OYEKALE SAMUEL SUNDAY",
-  "SEDE MLEANIN CECILE","TEHA KOUYO FRANCK","YOLOU BLEDA SANDRINE","WAYOU CLAUDE SOSTHERNE",
-  "ANANI ULRICH","ADOPO JORIM","TAPE MARIE-EMMANUELLE","CAMARA ALPHA",
-  "KOFFI ISRAEL","OPKO MICHEL"
-];
-
-function normalizeEmployees(raw){
-  return raw.map(e => (typeof e === 'string') ? { name: e, pin: DEFAULT_EMP_PIN } : e);
-}
-
-async function loadEmployees(){
-  try{
-    const res = await window.storage.get('employees', true);
-    let raw = res ? JSON.parse(res.value) : [];
-    employees = normalizeEmployees(raw);
-    if(employees.length === 0){
-      employees = DEFAULT_EMPLOYEE_NAMES.map(name => ({ name, pin: DEFAULT_EMP_PIN }));
-      await window.storage.set('employees', JSON.stringify(employees), true);
-    }
-  }catch(e){
-    employees = DEFAULT_EMPLOYEE_NAMES.map(name => ({ name, pin: DEFAULT_EMP_PIN }));
-  }
-  renderNameSelect();
-  renderEmpList();
-}
-loadEmployees();
-
-function renderNameSelect(){
-  const sel = document.getElementById('nameSelect');
-  sel.innerHTML = '<option value="">— sélectionner —</option>' +
-    employees.map(e=>`<option value="${e.name}">${e.name}</option>`).join('');
-}
-
-function renderEmpList(){
-  const box = document.getElementById('empList');
-  if(!box) return;
-  if(employees.length===0){
-    box.innerHTML = '<span class="hint">Aucun employé enregistré pour le moment.</span>';
-    return;
-  }
-  box.innerHTML = employees.map((e,i)=>`
-    <div class="emp-row">
-      <span class="emp-name">${e.name}</span>
-      <input type="text" class="emp-pin" maxlength="6" inputmode="numeric" value="${e.pin}" data-idx="${i}">
-      <button data-idx="${i}" class="savePinRow" disabled>Enregistrer</button>
-      <span class="pin-saved" data-idx="${i}"></span>
-      <button data-idx="${i}" class="rmEmp">×</button>
-    </div>
-  `).join('');
-
-  box.querySelectorAll('.emp-pin').forEach(inp=>{
-    inp.oninput = ()=>{
-      const idx = inp.dataset.idx;
-      box.querySelector(`.savePinRow[data-idx="${idx}"]`).disabled = false;
-    };
-  });
-
-  box.querySelectorAll('.savePinRow').forEach(saveBtn=>{
-    saveBtn.onclick = async ()=>{
-      const idx = parseInt(saveBtn.dataset.idx);
-      const inp = box.querySelector(`.emp-pin[data-idx="${idx}"]`);
-      employees[idx].pin = inp.value.trim();
-      try{
-        await window.storage.set('employees', JSON.stringify(employees), true);
-        saveBtn.disabled = true;
-        const savedTag = box.querySelector(`.pin-saved[data-idx="${idx}"]`);
-        savedTag.textContent = 'Enregistré ✓';
-        setTimeout(()=>{ savedTag.textContent=''; }, 2000);
-      }catch(e){ console.error(e); }
-    };
-  });
-
-  box.querySelectorAll('.rmEmp').forEach(btn=>{
-    btn.onclick = async ()=>{
-      employees.splice(parseInt(btn.dataset.idx),1);
-      await window.storage.set('employees', JSON.stringify(employees), true);
-      renderNameSelect(); renderEmpList();
-    };
-  });
-}
-
-document.getElementById('addEmpBtn').onclick = async ()=>{
-  const inp = document.getElementById('newEmpName');
-  const name = inp.value.trim();
-  if(!name) return;
-  if(employees.some(e=>e.name === name)){ inp.value=''; return; }
-  employees.push({ name, pin: DEFAULT_EMP_PIN });
-  try{
-    await window.storage.set('employees', JSON.stringify(employees), true);
-    inp.value='';
-    renderNameSelect(); renderEmpList();
-  }catch(e){ console.error(e); }
-};
-
-async function refreshLockState(){
-  const sel = document.getElementById('nameSelect');
-  const name = sel.value;
-  const lockNote = document.getElementById('lockNote');
-  const btnArrivee = document.getElementById('btnArrivee');
-  const btnDepart = document.getElementById('btnDepart');
-
-  if(!name){
-    lockNote.classList.remove('show');
-    btnArrivee.disabled = false;
-    btnDepart.disabled = false;
-    return;
-  }
-
-  try{
-    const res = await window.storage.get(todayKey(), true);
-    const entries = res ? JSON.parse(res.value) : [];
-    
-    const hasArrivee = entries.some(e => e.name === name && e.type === 'arrivee');
-    const hasDepart = entries.some(e => e.name === name && e.type === 'depart');
-
-    if(hasArrivee){
-      lockNote.classList.add('show');
-      btnArrivee.disabled = true;
-    }else{
-      lockNote.classList.remove('show');
-      btnArrivee.disabled = false;
-    }
-
-    if(!hasArrivee || hasDepart){
-      btnDepart.disabled = true;
-    }else{
-      btnDepart.disabled = false;
-    }
-  }catch(e){
-    lockNote.classList.remove('show');
-    btnArrivee.disabled = false;
-    btnDepart.disabled = false;
-  }
-}
-document.getElementById('nameSelect').onchange = refreshLockState;
-
-async function punch(type){
-  const sel = document.getElementById('nameSelect');
-  const name = sel.value;
-  const pinField = document.getElementById('punchPin');
-  const enteredPin = pinField.value.trim();
-  const statusMsg = document.getElementById('statusMsg');
-  statusMsg.classList.remove('error');
-
-  if(!name){
-    statusMsg.textContent = "Sélectionnez votre nom avant de pointer.";
-    statusMsg.classList.add('error');
-    return;
-  }
-
-  const emp = employees.find(e => e.name === name);
-  if(!emp){
-    statusMsg.textContent = "Employé introuvable.";
-    statusMsg.classList.add('error');
-    return;
-  }
-
-  if(!enteredPin || enteredPin !== emp.pin){
-    statusMsg.textContent = "Code PIN incorrect.";
-    statusMsg.classList.add('error');
-    return;
-  }
-
-  try{
-    const res = await window.storage.get(todayKey(), true);
-    const entries = res ? JSON.parse(res.value) : [];
-    const hasArrivee = entries.some(e => e.name === name && e.type === 'arrivee');
-    const hasDepart = entries.some(e => e.name === name && e.type === 'depart');
-
-    if(type === 'arrivee' && hasArrivee){
-      statusMsg.textContent = "Arrivée déjà enregistrée aujourd'hui pour cette personne.";
-      statusMsg.classList.add('error');
-      await refreshLockState();
-      return;
-    }
-
-    if(type === 'depart' && !hasArrivee){
-      statusMsg.textContent = "Impossible de pointer le départ : vous n'avez pas encore pointé votre arrivée aujourd'hui.";
-      statusMsg.classList.add('error');
-      await refreshLockState();
-      return;
-    }
-
-    if(type === 'depart' && hasDepart){
-      statusMsg.textContent = "Départ déjà enregistré aujourd'hui pour cette personne.";
-      statusMsg.classList.add('error');
-      await refreshLockState();
-      return;
-    }
-  }catch(e){}
-
-  document.getElementById('btnArrivee').disabled = true;
-  document.getElementById('btnDepart').disabled = true;
-
-  const now = new Date();
-  const key = todayKey(now);
-  const entry = { name, type, time: timeStr(now), ts: now.getTime() };
-
-  try{
-    let existing = [];
-    try{
-      const res = await window.storage.get(key, true);
-      existing = res ? JSON.parse(res.value) : [];
-    }catch(e){ existing = []; }
-    existing.push(entry);
-    await window.storage.set(key, JSON.stringify(existing), true);
-
-    document.getElementById('tbName').textContent = name;
-    document.getElementById('tbStatus').textContent = type==='arrivee' ? 'Arrivée' : 'Départ';
-    document.getElementById('tbDate').textContent = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
-    document.getElementById('tbTime').textContent = entry.time;
-
-    const stamp = document.getElementById('stampEl');
-    stamp.classList.remove('show','depart');
-    if(type==='depart') stamp.classList.add('depart');
-    void stamp.offsetWidth;
-    stamp.classList.add('show');
-
-    statusMsg.textContent = `Pointage enregistré — ${name}, ${type==='arrivee'?'arrivée':'départ'} à ${entry.time}.`;
-    pinField.value = '';
-
-  }catch(e){
-    statusMsg.textContent = "Échec de l'enregistrement. Vérifiez la connexion et réessayez.";
-    statusMsg.classList.add('error');
-  }finally{
-    await refreshLockState();
-  }
-}
-document.getElementById('btnArrivee').onclick = ()=>punch('arrivee');
-document.getElementById('btnDepart').onclick = ()=>punch('depart');
-
-const overlay = document.getElementById('adminOverlay');
-const pinModal = document.getElementById('pinModal');
-const dashModal = document.getElementById('dashModal');
-
-document.getElementById('openAdmin').onclick = ()=>{
-  overlay.classList.add('show');
-  pinModal.style.display='block';
-  dashModal.style.display='none';
-  document.getElementById('pinInput').value='';
-  document.getElementById('pinMsg').textContent='';
-};
-document.getElementById('closePin').onclick = ()=> overlay.classList.remove('show');
-document.getElementById('closeDash').onclick = ()=>{
-  if(unsubscribeDash) { unsubscribeDash(); unsubscribeDash = null; }
-  overlay.classList.remove('show');
-};
-
-document.getElementById('pinSubmit').onclick = async ()=>{
-  const entered = document.getElementById('pinInput').value.trim();
-  let stored = DEFAULT_PIN;
-  try{
-    const res = await window.storage.get('admin_pin', true);
-    if(res) stored = res.value;
-  }catch(e){}
-  if(entered === stored){
-    pinModal.style.display='none';
-    dashModal.style.display='block';
-    document.getElementById('dashDate').value = new Date().toISOString().slice(0,10);
-    loadDash();
-  }else{
-    document.getElementById('pinMsg').textContent = 'Code incorrect.';
-  }
-};
-
-document.querySelectorAll('[data-tab]').forEach(btn=>{
-  btn.onclick = ()=>{
-    currentTab = btn.dataset.tab;
-    document.getElementById('tab-pointages').style.display = currentTab==='pointages' ? 'block':'none';
-    document.getElementById('tab-employes').style.display = currentTab==='employes' ? 'block':'none';
-    document.getElementById('tab-reglages').style.display = currentTab==='reglages' ? 'block':'none';
-  };
-});
-
-document.getElementById('savePinBtn').onclick = async ()=>{
-  const newPinVal = document.getElementById('newPin').value.trim();
-  const pinMsg = document.getElementById('pinSaveMsg');
-  if(!newPinVal || newPinVal.length < 4){
-    pinMsg.textContent = 'Le code doit contenir au moins 4 caractères.';
-    pinMsg.style.color = 'var(--err)';
-    return;
-  }
-  try{
-    await window.storage.set('admin_pin', newPinVal, true);
-    pinMsg.textContent = 'Code PIN responsable mis à jour ✓';
-    pinMsg.style.color = 'var(--ok)';
-    document.getElementById('newPin').value = '';
-  }catch(e){}
-};
-
-document.getElementById('dashDate').onchange = loadDash;
-
-function loadDash(){
-  const dateVal = document.getElementById('dashDate').value;
-  if(!dateVal) return;
-  const key = `pointages_${dateVal}`;
-  const body = document.getElementById('dashBody');
-  body.innerHTML = '<tr class="empty-row"><td colspan="4">Chargement…</td></tr>';
-
-  if(unsubscribeDash) { unsubscribeDash(); unsubscribeDash = null; }
-
-  unsubscribeDash = onSnapshot(doc(db, "app_data", key), (docSnap) => {
-    let entries = [];
-    if (docSnap.exists()) {
-      try {
-        entries = JSON.parse(docSnap.data().val);
-      } catch(e) { entries = []; }
-    }
-
-    if(entries.length===0){
-      body.innerHTML = '<tr class="empty-row"><td colspan="4">Aucun pointage pour cette date.</td></tr>';
-      return;
-    }
-
-    const byName = {};
-    entries.forEach(e=>{
-      if(!byName[e.name]) byName[e.name] = {arrivee:null, depart:null};
-      if(e.type==='arrivee' && (!byName[e.name].arrivee || e.ts < byName[e.name].arriveeTs)){
-        byName[e.name].arrivee = e.time; byName[e.name].arriveeTs = e.ts;
-      }
-      if(e.type==='depart' && (!byName[e.name].depart || e.ts > byName[e.name].departTs)){
-        byName[e.name].depart = e.time; byName[e.name].departTs = e.ts;
-      }
-    });
-
-    body.innerHTML = Object.keys(byName).sort().map(name=>{
-      const r = byName[name];
-      let total = '—';
-      if(r.arriveeTs && r.departTs && r.departTs > r.arriveeTs){
-        const mins = Math.round((r.departTs - r.arriveeTs)/60000);
-        total = `${pad(Math.floor(mins/60))}h${pad(mins%60)}`;
-      }
-      return `<tr><td>${name}</td><td>${r.arrivee||'—'}</td><td>${r.depart||'—'}</td><td>${total}</td></tr>`;
-    }).join('');
-  }, (error) => {
-    console.error("Erreur écoute temps réel:", error);
-    body.innerHTML = '<tr class="empty-row"><td colspan="4">Erreur de chargement.</td></tr>';
-  });
-}
-
-function frDateLabel(dateVal){
-  const d = new Date(dateVal + 'T00:00:00');
-  return d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-}
-
-async function getDayEntries(dateVal){
-  const key = `pointages_${dateVal}`;
-  try{
-    const res = await window.storage.get(key, true);
-    return res ? JSON.parse(res.value) : [];
-  }catch(e){ return []; }
-}
-
-function summarizeByName(entries){
-  const byName = {};
-  entries.forEach(e=>{
-    if(!byName[e.name]) byName[e.name] = {arrivee:null, arriveeTs:0, depart:null, departTs:0};
-    if(e.type==='arrivee' && (!byName[e.name].arrivee || e.ts < byName[e.name].arriveeTs)){
-      byName[e.name].arrivee = e.time; byName[e.name].arriveeTs = e.ts;
-    }
-    if(e.type==='depart' && (!byName[e.name].depart || e.ts > byName[e.name].departTs)){
-      byName[e.name].depart = e.time; byName[e.name].departTs = e.ts;
-    }
-  });
-  return byName;
-}
-
-document.getElementById('downloadCahierBtn').onclick = async ()=>{
-  const dateVal = document.getElementById('dashDate').value;
-  if(!dateVal) return;
-  const btn = document.getElementById('downloadCahierBtn');
-  btn.disabled = true; btn.textContent = 'Génération…';
-  try{
-    const entries = await getDayEntries(dateVal);
-    const byName = summarizeByName(entries);
-
-    const rows = employees.map((emp,i)=>{
-      const name = emp.name;
-      const r = byName[name];
-      const arrivee = r && r.arrivee ? r.arrivee.slice(0,5) : '';
-      const depart = r && r.depart ? r.depart.slice(0,5) : '';
-      const sigA = r && r.arrivee ? 'Pointage électronique' : '';
-      const sigD = r && r.depart ? 'Pointage électronique' : '';
-      return `<tr><td style="text-align:center;">${i+1}</td><td>${name}</td><td style="text-align:center;">${arrivee}</td><td style="text-align:center; font-size:9pt;">${sigA}</td><td style="text-align:center;">${depart}</td><td style="text-align:center; font-size:9pt;">${sigD}</td></tr>`;
-    }).join('');
-
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-    <head><meta charset="utf-8"><title>Cahier d'émargement</title>
-    <style>body{font-family:'Arial',sans-serif;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #000;padding:6px;font-size:10pt;} th{background:#f0f0f0;}</style>
-    </head><body>
-    <h2>KHALIF INGÉNIERIE — CAHIER D'ÉMARGEMENT</h2>
-    <p><b>Date :</b> ${frDateLabel(dateVal)}</p>
-    <table>
-      <thead><tr><th>N°</th><th>Nom &amp; Prénoms</th><th style="width:80px; text-align:center;">Heure Arrivée</th><th>Observations Arrivée</th><th style="width:80px; text-align:center;">Heure Départ</th><th>Observations Départ</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    </body></html>`;
-
-    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cahier_emargement_${dateVal}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }catch(e){
-    console.error(e);
-  }finally{
-    btn.disabled = false; btn.textContent = 'Télécharger le cahier du jour (Word)';
-  }
-};
-</script>
+    </script>
 </body>
 </html>
