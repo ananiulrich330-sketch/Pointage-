@@ -407,16 +407,43 @@
   </div>
 </div>
 
-<script>
-  // Utilisation du stockage local (localStorage) pur et robuste pour que tout fonctionne immédiatement sans configuration externe
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSy...",
+    authDomain: "...",
+    projectId: "...",
+    storageBucket: "...",
+    messagingSenderId: "...",
+    appId: "..."
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
   window.storage = {
     get: async function(key, isJson) {
-      const val = localStorage.getItem(key);
-      return val !== null ? { value: val } : null;
+      try {
+        const snap = await getDoc(doc(db, "app_data", key));
+        if (snap.exists()) {
+          return { value: snap.data().val };
+        }
+        return null;
+      } catch (e) {
+        console.error("Firestore get error:", e);
+        return null;
+      }
     },
     set: async function(key, value, isJson) {
-      localStorage.setItem(key, value);
-      return true;
+      try {
+        await setDoc(doc(db, "app_data", key), { val: value });
+        return true;
+      } catch (e) {
+        console.error("Firestore set error:", e);
+        throw e;
+      }
     }
   };
 
@@ -424,6 +451,7 @@ const DEFAULT_PIN = "2026";
 const DEFAULT_EMP_PIN = "0000";
 let employees = [];
 let currentTab = 'pointages';
+let unsubscribeDash = null;
 
 function pad(n){return n.toString().padStart(2,'0');}
 function todayKey(d=new Date()){return `pointages_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
@@ -457,7 +485,6 @@ const DEFAULT_EMPLOYEE_NAMES = [
   "ANANI ULRICH","ADOPO JORIM","TAPE MARIE-EMMANUELLE","CAMARA ALPHA",
   "KOFFI ISRAEL","OPKO MICHEL"
 ];
-const RETARD_THRESHOLD = "08:30:00";
 
 function normalizeEmployees(raw){
   return raw.map(e => (typeof e === 'string') ? { name: e, pin: DEFAULT_EMP_PIN } : e);
@@ -696,7 +723,10 @@ document.getElementById('openAdmin').onclick = ()=>{
   document.getElementById('pinMsg').textContent='';
 };
 document.getElementById('closePin').onclick = ()=> overlay.classList.remove('show');
-document.getElementById('closeDash').onclick = ()=> overlay.classList.remove('show');
+document.getElementById('closeDash').onclick = ()=>{
+  if(unsubscribeDash) { unsubscribeDash(); unsubscribeDash = null; }
+  overlay.classList.remove('show');
+};
 
 document.getElementById('pinSubmit').onclick = async ()=>{
   const entered = document.getElementById('pinInput').value.trim();
@@ -742,43 +772,52 @@ document.getElementById('savePinBtn').onclick = async ()=>{
 
 document.getElementById('dashDate').onchange = loadDash;
 
-async function loadDash(){
+function loadDash(){
   const dateVal = document.getElementById('dashDate').value;
   if(!dateVal) return;
   const key = `pointages_${dateVal}`;
   const body = document.getElementById('dashBody');
   body.innerHTML = '<tr class="empty-row"><td colspan="4">Chargement…</td></tr>';
-  let entries = [];
-  try{
-    const res = await window.storage.get(key, true);
-    entries = res ? JSON.parse(res.value) : [];
-  }catch(e){ entries = []; }
 
-  if(entries.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="4">Aucun pointage pour cette date.</td></tr>';
-    return;
-  }
+  if(unsubscribeDash) { unsubscribeDash(); unsubscribeDash = null; }
 
-  const byName = {};
-  entries.forEach(e=>{
-    if(!byName[e.name]) byName[e.name] = {arrivee:null, depart:null};
-    if(e.type==='arrivee' && (!byName[e.name].arrivee || e.ts < byName[e.name].arriveeTs)){
-      byName[e.name].arrivee = e.time; byName[e.name].arriveeTs = e.ts;
+  unsubscribeDash = onSnapshot(doc(db, "app_data", key), (docSnap) => {
+    let entries = [];
+    if (docSnap.exists()) {
+      try {
+        entries = JSON.parse(docSnap.data().val);
+      } catch(e) { entries = []; }
     }
-    if(e.type==='depart' && (!byName[e.name].depart || e.ts > byName[e.name].departTs)){
-      byName[e.name].depart = e.time; byName[e.name].departTs = e.ts;
+
+    if(entries.length===0){
+      body.innerHTML = '<tr class="empty-row"><td colspan="4">Aucun pointage pour cette date.</td></tr>';
+      return;
     }
+
+    const byName = {};
+    entries.forEach(e=>{
+      if(!byName[e.name]) byName[e.name] = {arrivee:null, depart:null};
+      if(e.type==='arrivee' && (!byName[e.name].arrivee || e.ts < byName[e.name].arriveeTs)){
+        byName[e.name].arrivee = e.time; byName[e.name].arriveeTs = e.ts;
+      }
+      if(e.type==='depart' && (!byName[e.name].depart || e.ts > byName[e.name].departTs)){
+        byName[e.name].depart = e.time; byName[e.name].departTs = e.ts;
+      }
+    });
+
+    body.innerHTML = Object.keys(byName).sort().map(name=>{
+      const r = byName[name];
+      let total = '—';
+      if(r.arriveeTs && r.departTs && r.departTs > r.arriveeTs){
+        const mins = Math.round((r.departTs - r.arriveeTs)/60000);
+        total = `${pad(Math.floor(mins/60))}h${pad(mins%60)}`;
+      }
+      return `<tr><td>${name}</td><td>${r.arrivee||'—'}</td><td>${r.depart||'—'}</td><td>${total}</td></tr>`;
+    }).join('');
+  }, (error) => {
+    console.error("Erreur écoute temps réel:", error);
+    body.innerHTML = '<tr class="empty-row"><td colspan="4">Erreur de chargement.</td></tr>';
   });
-
-  body.innerHTML = Object.keys(byName).sort().map(name=>{
-    const r = byName[name];
-    let total = '—';
-    if(r.arriveeTs && r.departTs && r.departTs > r.arriveeTs){
-      const mins = Math.round((r.departTs - r.arriveeTs)/60000);
-      total = `${pad(Math.floor(mins/60))}h${pad(mins%60)}`;
-    }
-    return `<tr><td>${name}</td><td>${r.arrivee||'—'}</td><td>${r.depart||'—'}</td><td>${total}</td></tr>`;
-  }).join('');
 }
 
 function frDateLabel(dateVal){
@@ -802,7 +841,7 @@ function summarizeByName(entries){
       byName[e.name].arrivee = e.time; byName[e.name].arriveeTs = e.ts;
     }
     if(e.type==='depart' && (!byName[e.name].depart || e.ts > byName[e.name].departTs)){
-      byName[e.name].depart = e.time; byName[e.name].departTs = z = e.ts;
+      byName[e.name].depart = e.time; byName[e.name].departTs = e.ts;
     }
   });
   return byName;
@@ -853,30 +892,6 @@ document.getElementById('downloadCahierBtn').onclick = async ()=>{
     btn.disabled = false; btn.textContent = 'Télécharger le cahier du jour (Word)';
   }
 };
-</script> 
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDQzyST3m4eWC2_8fDwoLHEIbIHhM3cwq0",
-    authDomain: "pointage-khalif.firebaseapp.com",
-    databaseURL: "https://pointage-khalif-default-rtdb.firebaseio.com",
-    projectId: "pointage-khalif",
-    storageBucket: "pointage-khalif.firebasestorage.app",
-    messagingSenderId: "568693399015",
-    appId: "1:568693399015:web:d9097c0d29dd5ae6e5b142",
-    measurementId: "G-XM50FB3EP0"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script
+</script>
 </body>
 </html>
