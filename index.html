@@ -3,162 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pointage — Khalif Ingénierie</title>
-    <!-- Tailwind CSS pour un design propre -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>KHALIF INGÉNIERIE - Registre de Présence</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 flex flex-col items-center p-4">
 
-    <!-- En-tête / Heure -->
-    <div class="max-w-xl mx-auto px-4 py-8 w-full">
-        <div class="text-center mb-8">
-            <span class="text-xs font-semibold tracking-wider text-indigo-600 uppercase">Khalif Ingénierie • Registre de présence</span>
-            <div id="clock" class="text-4xl font-extrabold text-gray-900 mt-2">--:--:--</div>
-            <div id="date" class="text-sm text-gray-500 mt-1">-</div>
+    <!-- En-tête -->
+    <header class="w-full max-w-md bg-white rounded-2xl shadow-sm p-4 mb-4 flex justify-between items-center border border-slate-100">
+        <div>
+            <span class="text-xs font-bold tracking-wider text-indigo-900 uppercase">KHALIF INGÉNIERIE</span>
+            <h1 class="text-lg font-bold text-slate-900">Registre de Présence</h1>
         </div>
+        <button id="nav-btn" onclick="toggleView()" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5 border border-indigo-100">
+            🔒 Espace Admin
+        </button>
+    </header>
 
-        <!-- Formulaire de pointage -->
-        <div class="bg-white shadow rounded-2xl p-6 border border-gray-100">
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Nom de l'employé</label>
-            
-            <select id="employeSelect" class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-4">
-                <option value="">— sélectionner —</option>
-            </select>
-
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Code PIN (optionnel)</label>
-            <input type="password" id="pinInput" placeholder="...." class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-6 tracking-widest text-center text-lg">
-
-            <div class="grid grid-cols-2 gap-4">
-                <button id="btnArrivee" class="bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition">ARRIVÉE</button>
-                <button id="btnDepart" class="bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-700 transition">DÉPART</button>
-            </div>
-        </div>
-
-        <!-- Dernier statut affiché -->
-        <div class="bg-white shadow rounded-2xl p-6 border border-gray-100 mt-6">
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <span class="block text-xs text-gray-400 uppercase">Nom</span>
-                    <span id="statutNom" class="font-medium text-gray-800">—</span>
-                </div>
-                <div>
-                    <span class="block text-xs text-gray-400 uppercase">Statut</span>
-                    <span id="statutType" class="font-medium text-gray-800">—</span>
-                </div>
-                <div class="mt-4">
-                    <span class="block text-xs text-gray-400 uppercase">Date</span>
-                    <span id="statutDate" class="font-medium text-gray-800">—</span>
-                </div>
-                <div class="mt-4">
-                    <span class="block text-xs text-gray-400 uppercase">Heure</span>
-                    <span id="statutHeure" class="font-medium text-gray-800">—</span>
-                </div>
-            </div>
-        </div>
+    <!-- Horloge en temps réel -->
+    <div class="text-center mb-6">
+        <div id="live-clock" class="text-3xl font-black text-slate-900 tracking-tight">00:00:00</div>
+        <div id="live-date" class="text-xs text-slate-500 font-medium capitalize mt-0.5">Chargement de la date...</div>
     </div>
 
-    <!-- Scripts Firebase et Logique -->
-    <script type="module">
-        // Importation de Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <!-- VUE POINTAGE AGENT -->
+    <main id="view-agent" class="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 border border-slate-100 space-y-5">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Sélectionner ou chercher votre nom</label>
+                <div class="relative">
+                    <input type="text" id="agent-search" placeholder="Tapez votre nom pour filtrer..." oninput="filterAgents()" onfocus="showDropdown()" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
+                    <div id="agent-dropdown" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto hidden z-20 divide-y divide-slate-50"></div>
+                </div>
+            </div>
 
-        // Configuration Firebase (tes clés)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDQzystm4eWC2_8fdWoLHFThThhM3cwq0",
-            authDomain: "pointage-khalif.firebaseapp.com",
-            databaseURL: "https://pointage-khalif-default-rtdb.firebaseio.com",
-            projectId: "pointage-khalif",
-            storageBucket: "pointage-khalif.appspot.com",
-            messagingSenderId: "568693399015",
-            appId: "1:568693399015:web:d9097c0d29dd5ae6e5b142",
-            measurementId: "G-XM50BF3EP0"
-        };
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Mot de passe / Code PIN (Par défaut : 0000)</label>
+                <input type="password" id="agent-pin" placeholder="••••" maxlength="6" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-center tracking-widest focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
+            </div>
 
-        // Initialisation de Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+            <div id="action-msg" class="text-xs font-medium text-center hidden p-2.5 rounded-xl"></div>
 
-        // Liste complète des employés
-        const listeEmployes = [
-            "Khalif",
-            "Anani Ulrich",
-            "Jean",
-            "ASSALE Anabelle",
-            "BOKA Axel",
-            "GBE Keani Elue Excelle",
-            "GOUAN Fiacre",
-            "KOUAKOU Carole",
-            "OULAI Tiemoko Perside",
-            "OUEDRAOGO Nicanor",
-            "OYEKALE Samuel Sunday",
-            "SEDE Mleanin Cecile",
-            "TEHA Kouyo Franck",
-            "YOLOU Bleda Sandrine",
-            "WAYOU Claude Sostherne",
-            "ADOPO Jorim",
-            "TAPE Marie-Emmanuelle",
-            "CAMARA Alpha",
-            "KOFFI Israel",
-            "OPKO Michel"
-        ];
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="effectuerPointage('ARRIVÉE')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md shadow-indigo-100 transition active:scale-95 text-sm">
+                    ARRIVÉE
+                </button>
+                <button onclick="effectuerPointage('DÉPART')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 text-sm">
+                    DÉPART
+                </button>
+            </div>
+        </div>
+    </main>
 
-        // Remplissage automatique du menu déroulant au chargement
-        document.addEventListener("DOMContentLoaded", () => {
-            const selectElement = document.getElementById("employeSelect");
-            
-            if (selectElement) {
-                listeEmployes.sort(); // Tri alphabétique
-                listeEmployes.forEach(nom => {
-                    const option = document.createElement("option");
-                    option.value = nom;
-                    option.textContent = nom;
-                    selectElement.appendChild(option);
+    <!-- VUE ADMINISTRATION -->
+    <main id="view-admin" class="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 border border-slate-100 space-y-6 hidden">
+        <h2 class="text-lg font-bold text-slate-900 border-b pb-3">Panneau d'Administration</h2>
+
+        <!-- Authentification Admin -->
+        <div id="admin-login-box" class="space-y-4">
+            <p class="text-xs text-slate-500 font-medium">Entrez le mot de passe administrateur :</p>
+            <input type="password" id="admin-pass-input" placeholder="Mot de passe admin" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onclick="loginAdmin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">Se connecter</button>
+        </div>
+
+        <!-- Contenu Admin (caché par défaut) -->
+        <div id="admin-panel-content" class="space-y-6 hidden">
+            <!-- Ajout d'employé -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-700 uppercase">Ajouter un employé</h3>
+                <input type="text" id="new-agent-name" placeholder="Nom et Prénom" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none">
+                <button onclick="addAgent()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs transition">Ajouter l'employé</button>
+            </div>
+
+            <!-- Liste des employés & Gestion PIN -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-bold text-slate-700 uppercase">Liste des employés & Fiches PIN</h3>
+                <div id="admin-agents-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Pointages en temps réel -->
+            <div class="space-y-3 border-t pt-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-slate-700 uppercase">Pointages du jour</h3>
+                    <div class="flex gap-1.5">
+                        <button onclick="exportExcel()" class="bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium">Excel</button>
+                        <button onclick="exportPDF()" class="bg-rose-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium">PDF</button>
+                    </div>
+                </div>
+                <div id="admin-pointages-list" class="space-y-2 max-h-48 overflow-y-auto text-xs pr-1"></div>
+            </div>
+
+            <!-- Modification Mot de passe Admin -->
+            <div class="border-t pt-4 space-y-3">
+                <h3 class="text-xs font-bold text-slate-700 uppercase">Sécurité : Modifier le mot de passe Admin</h3>
+                <input type="password" id="new-admin-pass" placeholder="Nouveau mot de passe admin" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                <button onclick="updateAdminPassword()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 rounded-xl text-xs transition">Mettre à jour</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://khalif-pointage-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let selectedAgent = '';
+        let isAdminLoggedIn = false;
+
+        // Horloge
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString();
+            document.getElementById('live-date').innerText = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }, 1000);
+
+        // Gestion de la liste des agents
+        function loadAgentsDropdown() {
+            db.ref('agents').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const dropdown = document.getElementById('agent-dropdown');
+                dropdown.innerHTML = '';
+                
+                const names = Object.keys(data);
+                if (names.length === 0) {
+                    dropdown.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">Aucun employé enregistré</div>';
+                    return;
+                }
+
+                names.forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = "p-2.5 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition";
+                    div.innerText = name;
+                    div.onclick = () => selectAgent(name);
+                    dropdown.appendChild(div);
                 });
+            });
+        }
+
+        function filterAgents() {
+            const query = document.getElementById('agent-search').value.toLowerCase();
+            const dropdown = document.getElementById('agent-dropdown');
+            dropdown.classList.remove('hidden');
+            
+            db.ref('agents').once('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                dropdown.innerHTML = '';
+                const filtered = Object.keys(data).filter(n => n.toLowerCase().includes(query));
+                
+                if (filtered.length === 0) {
+                    dropdown.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">Aucun résultat</div>';
+                    return;
+                }
+
+                filtered.forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = "p-2.5 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition";
+                    div.innerText = name;
+                    div.onclick = () => selectAgent(name);
+                    dropdown.appendChild(div);
+                });
+            });
+        }
+
+        function showDropdown() {
+            document.getElementById('agent-dropdown').classList.remove('hidden');
+        }
+
+        function selectAgent(name) {
+            selectedAgent = name;
+            document.getElementById('agent-search').value = name;
+            document.getElementById('agent-dropdown').classList.add('hidden');
+        }
+
+        // Pointage Arrivée / Départ avec gestion du retard
+        function effectuerPointage(type) {
+            const pin = document.getElementById('agent-pin').value.trim();
+            const msgBox = document.getElementById('action-msg');
+
+            if (!selectedAgent) {
+                showAlert(msgBox, "Veuillez sélectionner un employé.", "error");
+                return;
             }
-
-            // Mise à jour de l'heure en direct
-            setInterval(() => {
-                const now = new Date();
-                document.getElementById('clock').textContent = now.toLocaleTimeString('fr-FR');
-                document.getElementById('date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            }, 1000);
-        });
-
-        // Gestion des clics sur Arrivée / Départ
-        document.getElementById('btnArrivee').addEventListener('click', () => enregistrerPointage('ARRIVÉE'));
-        document.getElementById('btnDepart').addEventListener('click', () => enregistrerPointage('DÉPART'));
-
-        function enregistrerPointage(type) {
-            const nom = document.getElementById('employeSelect').value;
-            if (!nom) {
-                alert("Veuillez sélectionner un employé dans la liste !");
+            if (!pin) {
+                showAlert(msgBox, "Veuillez entrer votre code PIN.", "error");
                 return;
             }
 
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('fr-FR');
-            const heureStr = now.toLocaleTimeString('fr-FR');
+            db.ref('agents/' + selectedAgent).once('value', (snapshot) => {
+                const agentData = snapshot.val();
+                const validPin = agentData && agentData.pin ? agentData.pin : '0000';
 
-            // Envoi vers Firebase Realtime Database
-            const pointagesRef = ref(db, 'pointages');
-            push(pointagesRef, {
-                employe: nom,
-                statut: type,
-                date: dateStr,
-                heure: heureStr,
-                timestamp: Date.now()
-            }).then(() => {
-                // Affichage dans l'encadré de confirmation
-                document.getElementById('statutNom').textContent = nom;
-                document.getElementById('statutType').textContent = type;
-                document.getElementById('statutDate').textContent = dateStr;
-                document.getElementById('statutHeure').textContent = heureStr;
-                alert(`Pointage (${type}) enregistré avec succès pour ${nom} !`);
-            }).catch((error) => {
-                alert("Erreur lors de l'enregistrement : " + error.message);
+                if (pin !== validPin) {
+                    showAlert(msgBox, "Mot de passe incorrect pour cet employé.", "error");
+                    return;
+                }
+
+                const todayStr = new Date().toISOString().split('T')[0];
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                
+                let status = type;
+                if (type === 'ARRIVÉE') {
+                    const hours = now.getHours();
+                    const minutes = now.getMinutes();
+                    if (hours > 8 || (hours === 8 && minutes > 30)) {
+                        status = 'ARRIVÉE (RETARD)';
+                    }
+                }
+
+                db.ref(`pointages/${todayStr}/${selectedAgent}_${type}`).set({
+                    agent: selectedAgent,
+                    type: type,
+                    status: status,
+                    timestamp: now.toISOString(),
+                    time: timeStr
+                }, (error) => {
+                    if (!error) {
+                        showAlert(msgBox, `Pointage de type ${type} enregistré avec succès !`, "success");
+                        document.getElementById('agent-pin').value = '';
+                    } else {
+                        showAlert(msgBox, "Erreur lors de l'enregistrement.", "error");
+                    }
+                });
             });
         }
+
+        function showAlert(element, text, type) {
+            element.innerText = text;
+            element.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700', 'bg-rose-50', 'text-rose-700');
+            if (type === 'success') {
+                element.classList.add('bg-emerald-50', 'text-emerald-700');
+            } else {
+                element.classList.add('bg-rose-50', 'text-rose-700');
+            }
+            setTimeout(() => element.classList.add('hidden'), 4000);
+        }
+
+        // Navigation Admin / Agent
+        function toggleView() {
+            const agentView = document.getElementById('view-agent');
+            const adminView = document.getElementById('view-admin');
+            const navBtn = document.getElementById('nav-btn');
+
+            if (agentView.classList.contains('hidden')) {
+                agentView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                navBtn.innerHTML = '🔒 Espace Admin';
+            } else {
+                agentView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                navBtn.innerHTML = '← Espace Pointage';
+            }
+        }
+
+        async function loginAdmin() {
+            const pass = document.getElementById('admin-pass-input').value;
+            db.ref('admin/password').once('value', (snapshot) => {
+                const adminPass = snapshot.val() || 'admin123';
+                if (pass === adminPass) {
+                    isAdminLoggedIn = true;
+                    document.getElementById('admin-login-box').classList.add('hidden');
+                    document.getElementById('admin-panel-content').classList.remove('hidden');
+                    loadAdminData();
+                } else {
+                    alert("Mot de passe administrateur incorrect.");
+                }
+            });
+        }
+
+        function loadAdminData() {
+            db.ref('agents').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const listContainer = document.getElementById('admin-agents-list');
+                listContainer.innerHTML = '';
+                Object.keys(data).forEach(name => {
+                    listContainer.innerHTML += `
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 space-y-2 text-xs">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-800">${name} (PIN: ${data[name].pin || '0000'})</span>
+                                <div class="flex gap-1">
+                                    <button onclick="downloadAgentPDF('${name}', '${data[name].pin || '0000'}')" class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-medium">PDF Fiche</button>
+                                    <button onclick="deleteAgent('${name}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded font-medium">Supprimer</button>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="pin-input-${name}" placeholder="Nouveau PIN" maxlength="6" class="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs w-28 outline-none">
+                                <button onclick="updateAgentPin('${name}')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded font-medium">Changer PIN</button>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            db.ref(`pointages/${todayStr}`).on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const listContainer = document.getElementById('admin-pointages-list');
+                listContainer.innerHTML = '';
+                const keys = Object.keys(data);
+                if (keys.length === 0) {
+                    listContainer.innerHTML = '<div class="text-slate-400 text-center py-2">Aucun pointage aujourd\'hui.</div>';
+                    return;
+                }
+                keys.forEach(k => {
+                    const p = data[k];
+                    listContainer.innerHTML += `
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-100 flex justify-between items-center">
+                            <div><span class="font-bold">${p.agent}</span> - <span class="text-indigo-600 font-semibold">${p.status}</span></div>
+                            <div class="text-slate-500">${p.time}</div>
+                        </div>`;
+                });
+            });
+        }
+
+        function addAgent() {
+            const name = document.getElementById('new-agent-name').value.trim();
+            if (!name) return;
+            db.ref('agents/' + name).set({ pin: '0000' }, () => {
+                document.getElementById('new-agent-name').value = '';
+                alert("Employé ajouté avec succès !");
+            });
+        }
+
+        function updateAgentPin(name) {
+            const newPin = document.getElementById(`pin-input-${name}`).value.trim();
+            if (!newPin) { alert("Veuillez entrer un code PIN valide."); return; }
+            db.ref(`agents/${name}/pin`).set(newPin, () => {
+                alert(`Code PIN de ${name} mis à jour avec succès !`);
+                document.getElementById(`pin-input-${name}`).value = '';
+            });
+        }
+
+        function deleteAgent(name) {
+            if (confirm(`Voulez-vous vraiment supprimer ${name} ?`)) {
+                db.ref('agents/' + name).remove();
+            }
+        }
+
+        function updateAdminPassword() {
+            const newPass = document.getElementById('new-admin-pass').value.trim();
+            if (!newPass) return;
+            db.ref('admin').set({ password: newPass }, () => {
+                alert("Mot de passe admin mis à jour !");
+                document.getElementById('new-admin-pass').value = '';
+            });
+        }
+
+        function downloadAgentPDF(name, pin) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("KHALIF INGÉNIERIE - Fiche d'Accès Agent", 14, 20);
+            doc.text(`Nom de l'employé : ${name}`, 14, 35);
+            doc.text(`Code PIN personnel : ${pin}`, 14, 45);
+            doc.text("Veuillez conserver ce code confidentiel pour vos pointages.", 14, 60);
+            doc.save(`Fiche_PIN_${name.replace(/\s+/g, '_')}.pdf`);
+        }
+
+        function exportExcel() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            db.ref(`pointages/${todayStr}`).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) { alert("Aucune donnée pour aujourd'hui."); return; }
+                const formatted = Object.keys(data).map(k => ({
+                    Agent: data[k].agent,
+                    Type: data[k].type,
+                    Statut: data[k].status,
+                    Heure: data[k].time
+                }));
+                const ws = XLSX.utils.json_to_sheet(formatted);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Pointages");
+                XLSX.writeFile(wb, `Pointages_${todayStr}.xlsx`);
+            });
+        }
+
+        function exportPDF() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            db.ref(`pointages/${todayStr}`).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) { alert("Aucune donnée pour aujourd'hui."); return; }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`KHALIF INGÉNIERIE - Rapport de Pointage (${todayStr})`, 14, 20);
+                const rows = Object.keys(data).map(k => [data[k].agent, data[k].type, data[k].status, data[k].time]);
+                doc.autoTable({ head: [['Agent', 'Type', 'Statut', 'Heure']], body: rows, startY: 30 });
+                doc.save(`Pointages_${todayStr}.pdf`);
+            });
+        }
+
+        window.onload = loadAgentsDropdown;
     </script>
 </body>
 </html>
