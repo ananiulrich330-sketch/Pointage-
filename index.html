@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -140,17 +139,16 @@ const employesRef = ref(db, 'employes');
 const pointagesRef = ref(db, 'pointages');
 const historiqueRef = ref(db, 'historique');
 const adminPassRef = ref(db, 'admin/password');
-// Nombre d'heures de travail considéré pour un jour ouvré (utilisé pour le calcul des absences)
+
 const HEURES_PAR_JOUR = 8;
-const HEURE_ARRIVEE_MAX_MINUTES = 8 * 60 + 30; // 08h30
-const HEURE_DEPART_NORMAL_MINUTES = 17 * 60;   // 17h00
-// Coordonnées GPS du bureau Khalif Ingénierie et rayon de tolérance (imprécision GPS incluse)
+const LIMITE_HEURE_ARRIVEE_MINUTES = 8 * 60 + 30; // 08:30
+
 const OFFICE_LAT = 5.339317;
 const OFFICE_LNG = -4.055416;
-const RAYON_TOLERANCE_METRES = 10;
-// Calcule la distance en mètres entre 2 points GPS (formule de Haversine)
+const RAYON_TOLERANCE_METRES = 100;
+
 function calculerDistanceMetres(lat1, lon1, lat2, lon2) {
-const R = 6371000; // rayon de la Terre en mètres
+const R = 6371000;
 const toRad = (deg) => deg * Math.PI / 180;
 const dLat = toRad(lat2 - lat1);
 const dLon = toRad(lon2 - lon1);
@@ -159,12 +157,31 @@ Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 return R * c;
 }
-// Retourne le nom du bureau pour un pointage donné (seuls les pointages dans la zone sont enregistrés)
+
 function libelleLieuPointage(latitude, longitude) {
-if (latitude == null || longitude == null) return "GPS non disponible";
-return `GPS : ${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}`;
+if (!latitude || !longitude) return "GPS non disponible";
+return "KHALIF INGÉNIÉRIE";
 }
-// Liste initiale complète des 20 employés
+
+// Fonction utilitaire pour convertir un nombre de minutes en texte clair (ex: 75 min -> "1h 15min")
+function regrouperMinutesEnHeures(minutesTotales) {
+if (!minutesTotales || minutesTotales <= 0) return "0 min";
+const h = Math.floor(minutesTotales / 60);
+const m = Math.round(minutesTotales % 60);
+if (h === 0) return `${m} min`;
+if (m === 0) return `${h} h`;
+return `${h}h ${m}min`;
+}
+
+// Calcule les minutes de retard par rapport à 08h30
+function calculerMinutesRetard(heureStr) {
+const minutesPrises = parseHeureFR(heureStr);
+if (minutesPrises === null || minutesPrises <= LIMITE_HEURE_ARRIVEE_MINUTES) {
+return 0;
+}
+return Math.round(minutesPrises - LIMITE_HEURE_ARRIVEE_MINUTES);
+}
+
 const listeInitialeEmployes = [
 "Khalif", "Anani Ulrich", "Jean", "ASSALE Anabelle", "BOKA Axel",
 "GBE Keani Elue Excelle", "GOUAN Fiacre", "KOUAKOU Carole",
@@ -173,7 +190,7 @@ const listeInitialeEmployes = [
 "WAYOU Claude Sostherne", "ADOPO Jorim", "TAPE Marie-Emmanuelle",
 "CAMARA Alpha", "KOFFI Israel", "OPKO Michel"
 ];
-// Injection intelligente : Ajoute les noms manquants sans supprimer les existants
+
 get(employesRef).then((snapshot) => {
 const employesActuels = snapshot.exists() ? Object.values(snapshot.val()).map(e => e.nom) : [];
 listeInitialeEmployes.forEach(nom => {
@@ -183,12 +200,13 @@ set(newRef, { nom: nom, pin: "0000" });
 }
 });
 });
+
 get(adminPassRef).then((snapshot) => {
 if (!snapshot.exists()) {
 set(adminPassRef, "admin123");
 }
 });
-// --- ARCHIVAGE AUTOMATIQUE DES POINTAGES QUI NE SONT PLUS D'AUJOURD'HUI ---
+
 function archiverAnciensPointages() {
   get(pointagesRef).then((snapshot) => {
     if (!snapshot.exists()) return;
@@ -196,7 +214,6 @@ function archiverAnciensPointages() {
     const data = snapshot.val();
     Object.entries(data).forEach(([key, p]) => {
       if (p.date && p.date !== aujourdHui) {
-        // On copie d'abord vers l'historique, puis on supprime seulement si la copie a réussi
         set(ref(db, `historique/${key}`), p).then(() => {
           remove(ref(db, `pointages/${key}`));
         });
@@ -204,10 +221,10 @@ function archiverAnciensPointages() {
     });
   });
 }
-// On archive au chargement de la page, puis on revérifie toutes les heures
-// (utile pour basculer automatiquement les pointages de la veille dès le changement de jour)
+
 archiverAnciensPointages();
 setInterval(archiverAnciensPointages, 60 * 60 * 1000);
+
 function afficherNotification(message, type = 'erreur') {
 const banner = document.getElementById('notificationBanner');
 banner.textContent = message;
@@ -217,14 +234,17 @@ type === 'succes' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-r
 banner.classList.remove('hidden');
 setTimeout(() => banner.classList.add('hidden'), 4000);
 }
+
 setInterval(() => {
 const now = new Date();
 document.getElementById('clock').textContent = now.toLocaleTimeString('fr-FR');
 document.getElementById('date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }, 1000);
+
 let donneesEmployesGlobal = {};
 let listeNomsEmployes = [];
 let pointagesAujourdHuiGlobal = [];
+
 onValue(employesRef, (snapshot) => {
 const adminListe = document.getElementById('adminListeEmployes');
 if(adminListe) adminListe.innerHTML = '';
@@ -258,10 +278,11 @@ adminListe.appendChild(div);
 });
 }
 });
-// --- GESTION DE LA LISTE DÉROULANTE VERS LE BAS (CUSTOM) ---
+
 const searchInput = document.getElementById('employeSearchInput');
 const dropdownList = document.getElementById('employeDropdownList');
 const hiddenInput = document.getElementById('employeSelectionne');
+
 function afficherDropdown(filtre = "") {
 dropdownList.innerHTML = "";
 const motsFiltre = filtre.toLowerCase();
@@ -283,19 +304,22 @@ dropdownList.appendChild(item);
 }
 dropdownList.classList.remove('hidden');
 }
+
 searchInput.addEventListener('focus', () => {
 afficherDropdown(searchInput.value);
 });
+
 searchInput.addEventListener('input', (e) => {
-hiddenInput.value = ""; // Réinitialise si l'utilisateur modifie à la main
+hiddenInput.value = "";
 afficherDropdown(e.target.value);
 });
-// Fermer la liste si on clique en dehors
+
 document.addEventListener('click', (e) => {
 if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
 dropdownList.classList.add('hidden');
 }
 });
+
 onValue(pointagesRef, (snapshot) => {
 const container = document.getElementById('adminListePointages');
 container.innerHTML = '';
@@ -316,20 +340,23 @@ gpsInfo = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 un
 gpsInfo = ` <span class="text-gray-400">(GPS non disponible)</span>`;
 }
 let statutBadgeColor = "text-indigo-600 font-semibold";
+let detailRetardTexte = "";
 if (p.statut === "ARRIVÉE (RETARD)") {
 statutBadgeColor = "text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded";
+const minR = p.minutesRetard || calculerMinutesRetard(p.heure);
+detailRetardTexte = ` (+${regrouperMinutesEnHeures(minR)})`;
 } else if (p.statut === "DÉPART") {
 statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded";
 }
 const div = document.createElement('div');
 div.className = "bg-white p-2 rounded border flex justify-between items-center";
-div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span><span class="text-xs ml-1">${gpsInfo}</span></span>
+div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}${detailRetardTexte}</span><span class="text-xs ml-1">${gpsInfo}</span></span>
 <span class="text-gray-500">${p.date} à ${p.heure}</span>`;
 container.appendChild(div);
 });
 }
 });
-// --- AFFICHAGE DE L'HISTORIQUE (pointages archivés après 24h) ---
+
 onValue(historiqueRef, (snapshot) => {
 const containerHisto = document.getElementById('adminListeHistorique');
 if (!containerHisto) return;
@@ -338,8 +365,11 @@ if (snapshot.exists()) {
 const data = snapshot.val();
 Object.values(data).reverse().forEach(p => {
 let statutBadgeColor = "text-indigo-600 font-semibold";
+let detailRetardTexte = "";
 if (p.statut === "ARRIVÉE (RETARD)") {
 statutBadgeColor = "text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded";
+const minR = p.minutesRetard || calculerMinutesRetard(p.heure);
+detailRetardTexte = ` (+${regrouperMinutesEnHeures(minR)})`;
 } else if (p.statut === "DÉPART") {
 statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded";
 }
@@ -351,7 +381,7 @@ const mapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
 const lieu = libelleLieuPointage(p.latitude, p.longitude);
 lieuHisto = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80 text-xs">${lieu}</a>`;
 }
-div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span>${lieuHisto}</span>
+div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}${detailRetardTexte}</span>${lieuHisto}</span>
 <span class="text-gray-500">${p.date} à ${p.heure}</span>`;
 containerHisto.appendChild(div);
 });
@@ -359,10 +389,11 @@ containerHisto.appendChild(div);
 containerHisto.innerHTML = '<div class="p-3 text-sm text-gray-400 text-center">Aucun historique pour le moment</div>';
 }
 });
+
 document.getElementById('btnArrivee').addEventListener('click', () => effectuerPointage('ARRIVÉE'));
 document.getElementById('btnDepart').addEventListener('click', () => effectuerPointage('DÉPART'));
+
 function effectuerPointage(statutDemande) {
-// Récupère depuis le champ caché ou le texte saisi s'il correspond exactement
 let nom = hiddenInput.value.trim();
 if (!nom) {
 const saisieExacte = searchInput.value.trim();
@@ -416,15 +447,19 @@ if (statutDemande === 'DÉPART' && !aSonArriveeCeJour) {
 afficherNotification("Vous devez enregistrer votre ARRIVÉE avant de pointer votre DÉPART.", "erreur");
 return;
 }
+
 let statutFinal = statutDemande;
+let minutesRetardCalcul = 0;
+
 if (statutDemande === 'ARRIVÉE') {
 const nowCheck = new Date();
 const totalMinutesActuelles = nowCheck.getHours() * 60 + nowCheck.getMinutes();
-const limiteMinutes = HEURE_ARRIVEE_MAX_MINUTES; // 08:30
-if (totalMinutesActuelles >= limiteMinutes) {
+if (totalMinutesActuelles > LIMITE_HEURE_ARRIVEE_MINUTES) {
 statutFinal = 'ARRIVÉE (RETARD)';
+minutesRetardCalcul = totalMinutesActuelles - LIMITE_HEURE_ARRIVEE_MINUTES;
 }
 }
+
 if (navigator.geolocation) {
 navigator.geolocation.getCurrentPosition(
 (position) => {
@@ -433,7 +468,7 @@ if (distance > RAYON_TOLERANCE_METRES) {
 afficherNotification(`Pointage refusé : vous êtes à environ ${Math.round(distance)}m du bureau (zone autorisée : ${RAYON_TOLERANCE_METRES}m).`, "erreur");
 return;
 }
-sauvegarderPointageFirebase(statutFinal, nom, aujourdHuiStr, position.coords.latitude, position.coords.longitude);
+sauvegarderPointageFirebase(statutFinal, nom, aujourdHuiStr, position.coords.latitude, position.coords.longitude, minutesRetardCalcul);
 },
 (error) => {
 afficherNotification("Localisation impossible : activez le GPS pour pouvoir pointer.", "erreur");
@@ -444,7 +479,8 @@ afficherNotification("Localisation impossible : activez le GPS pour pouvoir poin
 afficherNotification("Votre appareil ne supporte pas la géolocalisation, le pointage est impossible.", "erreur");
 }
 }
-function sauvegarderPointageFirebase(statut, nom, aujourdHuiStr, lat, lon) {
+
+function sauvegarderPointageFirebase(statut, nom, aujourdHuiStr, lat, lon, minutesRetard = 0) {
 const now = new Date();
 const heureStr = now.toLocaleTimeString('fr-FR');
 const payload = {
@@ -452,7 +488,8 @@ nom: nom,
 statut: statut,
 date: aujourdHuiStr,
 heure: heureStr,
-timestamp: Date.now()
+timestamp: Date.now(),
+minutesRetard: minutesRetard
 };
 if (lat !== null && lon !== null) {
 payload.latitude = lat;
@@ -462,8 +499,9 @@ push(pointagesRef, payload).then(() => {
 document.getElementById('formulaireBox').classList.add('hidden');
 const confirmBox = document.getElementById('ecranConfirmation');
 const isRetard = statut.includes('RETARD');
+const retardLisible = regrouperMinutesEnHeures(minutesRetard);
 document.getElementById('confirmTitre').textContent = isRetard ? `Pointage enregistré avec Retard !` : `Pointage (${statut}) validé !`;
-document.getElementById('confirmDetails').innerHTML = `Merci <b>${nom}</b>.<br>Enregistrement effectué à <b>${heureStr}</b> le ${aujourdHuiStr}. ${isRetard ? '<br><span class="text-red-600 font-semibold">(Arrivée après 08h30 : Retard notifié)</span>' : ''}`;
+document.getElementById('confirmDetails').innerHTML = `Merci <b>${nom}</b>.<br>Enregistrement effectué à <b>${heureStr}</b> le ${aujourdHuiStr}. ${isRetard ? `<br><span class="text-red-600 font-semibold">(Arrivée après 08h30 : ${retardLisible} de retard)</span>` : ''}`;
 confirmBox.classList.remove('hidden');
 setTimeout(() => {
 searchInput.value = '';
@@ -476,9 +514,11 @@ document.getElementById('formulaireBox').classList.remove('hidden');
 afficherNotification("Erreur de connexion : " + error.message, "erreur");
 });
 }
+
 const btnToggleAdmin = document.getElementById('btnToggleAdmin');
 const vueEmploye = document.getElementById('vueEmploye');
 const vueAdmin = document.getElementById('vueAdmin');
+
 btnToggleAdmin.addEventListener('click', () => {
 if (vueAdmin.classList.contains('hidden')) {
 vueAdmin.classList.remove('hidden');
@@ -490,6 +530,7 @@ vueEmploye.classList.remove('hidden');
 btnToggleAdmin.textContent = "🔒 Espace Admin";
 }
 });
+
 document.getElementById('btnAdminLogin').addEventListener('click', () => {
 const pwdSaisi = document.getElementById('adminPassword').value;
 get(adminPassRef).then((snapshot) => {
@@ -503,6 +544,7 @@ afficherNotification("Mot de passe administrateur incorrect.", "erreur");
 }
 });
 });
+
 document.getElementById('btnChangerPasswordAdmin').addEventListener('click', () => {
 const nouveauMdp = document.getElementById('nouveauPasswordAdmin').value.trim();
 if (!nouveauMdp) {
@@ -514,6 +556,7 @@ document.getElementById('nouveauPasswordAdmin').value = '';
 afficherNotification("Mot de passe administrateur mis à jour avec succès !", "succes");
 });
 });
+
 document.getElementById('btnAjouterEmploye').addEventListener('click', () => {
 const nom = document.getElementById('nouveauNom').value.trim();
 if(nom) {
@@ -526,11 +569,13 @@ afficherNotification("Employé ajouté avec succès (PIN par défaut : 0000) !",
 afficherNotification("Veuillez entrer un nom valide.", "erreur");
 }
 });
+
 window.supprimerEmploye = function(key) {
 remove(ref(db, `employes/${key}`)).then(() => {
 afficherNotification("Employé supprimé avec succès.", "succes");
 });
 };
+
 window.changerPinEmploye = function(key, nom) {
 const nouveauPinInput = document.getElementById(`nouveauPin_${key}`);
 const nouveauPin = nouveauPinInput.value.trim();
@@ -543,9 +588,7 @@ nouveauPinInput.value = '';
 afficherNotification(`Mot de passe de ${nom} mis à jour avec succès !`, "succes");
 });
 };
-// ==========================================
-// --- DESIGN DES PDF PROFESSIONNELS ---
-// ==========================================
+
 window.genererPdfEmploye = function(nom, pin) {
 const { jsPDF } = window.jspdf;
 const doc = new jsPDF();
@@ -554,7 +597,7 @@ doc.rect(0, 0, 210, 25, 'F');
 doc.setTextColor(255, 255, 255);
 doc.setFont("helvetica", "bold");
 doc.setFontSize(14);
-doc.text("KHALIF INGÉNIERIE", 14, 16);
+doc.text("KHALIF INGÉNIÉRIE", 14, 16);
 doc.setTextColor(30, 41, 59);
 doc.setFontSize(16);
 doc.text("FICHE D'IDENTIFIANT EMPLOYÉ", 14, 40);
@@ -583,141 +626,126 @@ doc.setFontSize(9);
 doc.text("Veuillez conserver précieusement ce code PIN. Il vous est personnellement requis pour\neffectuer vos pointages d'arrivée et de départ sur la plateforme de l'entreprise.", 18, doc.lastAutoTable.finalY + 30);
 doc.save(`Fiche_${nom.replace(/\s+/g, '_')}.pdf`);
 };
+
 document.getElementById('btnPdfJour').addEventListener('click', () => {
-Promise.all([get(pointagesRef), get(historiqueRef)]).then(([snapPointages, snapHistorique]) => {
-let toutesLesDonnees = [];
-
-if (snapPointages.exists()) {
-toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapPointages.val()));
-}
-
-if (snapHistorique.exists()) {
-toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapHistorique.val()));
-}
-
-if (toutesLesDonnees.length === 0) {
-afficherNotification("Aucun pointage à exporter.", "erreur");
-return;
-}
-
-const { recap } = construireDonneesExcel(toutesLesDonnees);
+get(pointagesRef).then((snapshot) => {
 const { jsPDF } = window.jspdf;
-const doc = new jsPDF({
-orientation: 'landscape',
-unit: 'mm',
-format: 'a4'
-});
-
+const doc = new jsPDF();
 const aujourdHui = new Date().toLocaleDateString('fr-FR');
-
 doc.setFillColor(79, 70, 229);
-doc.rect(0, 0, 297, 25, 'F');
-
+doc.rect(0, 0, 210, 25, 'F');
 doc.setTextColor(255, 255, 255);
 doc.setFont("helvetica", "bold");
 doc.setFontSize(14);
-doc.text("KHALIF INGÉNIERIE", 14, 16);
-
+doc.text("KHALIF INGÉNIÉRIE", 14, 16);
 doc.setTextColor(30, 41, 59);
 doc.setFontSize(16);
-doc.text("RÉCAPITULATIF DES POINTAGES", 14, 40);
-
+doc.text("RAPPORT JOURNALIER DE POINTAGE", 14, 40);
 doc.setFont("helvetica", "normal");
-doc.setFontSize(10);
+doc.setFontSize(11);
 doc.setTextColor(100, 116, 139);
 doc.text(`Date de l'édition : ${aujourdHui}`, 14, 48);
-
-const corps = recap.map(r => [
-r["Nom et Prénom"],
-r["Jours travaillés"],
-r["Jours ouvrés attendus"],
-r["Jours d'absence"],
-r["Heures d'absence estimées"],
-r["Nombre de retards"]
-]);
-
-doc.autoTable({
-startY: 56,
-head: [[
-"Nom et Prénom",
-"Jours travaillés",
-"Jours ouvrés attendus",
-"Jours d'absence",
-"Heures d'absence estimées",
-"Nombre de retards"
-]],
-body: corps,
-theme: 'grid',
-styles: {
-fontSize: 8,
-cellPadding: 3,
-halign: 'center',
-valign: 'middle'
-},
-headStyles: {
-fillColor: [79, 70, 229],
-textColor: [255, 255, 255],
-fontStyle: 'bold',
-halign: 'center'
-},
-columnStyles: {
-0: { halign: 'left', cellWidth: 55 },
-1: { cellWidth: 32 },
-2: { cellWidth: 40 },
-3: { cellWidth: 32 },
-4: { cellWidth: 45 },
-5: { cellWidth: 32 }
+let dataPresents = [];
+let dataRetards = [];
+if (snapshot.exists()) {
+const data = snapshot.val();
+Object.values(data).forEach(p => {
+if(p.date === aujourdHui) {
+if (p.statut === "ARRIVÉE (RETARD)") {
+const minR = p.minutesRetard || calculerMinutesRetard(p.heure);
+dataRetards.push([p.nom || 'Inconnu', p.heure, regrouperMinutesEnHeures(minR)]);
+} else {
+dataPresents.push([p.nom || 'Inconnu', p.statut, p.heure]);
+}
 }
 });
-
-doc.save(`Recapitulatif_Pointages_${aujourdHui.replace(/\//g, '-')}.pdf`);
-afficherNotification("PDF récapitulatif généré avec succès !", "succes");
-}).catch(error => {
-afficherNotification("Erreur lors de la génération du PDF : " + error.message, "erreur");
+}
+let currentY = 60;
+doc.setFont("helvetica", "bold");
+doc.setFontSize(12);
+doc.setTextColor(30, 41, 59);
+doc.text("PRÉSENCES ET MOUVEMENTS ENREGISTRÉS", 14, currentY);
+if (dataPresents.length > 0) {
+doc.autoTable({
+startY: currentY + 5,
+head: [['Nom et Prénom', 'Mouvement', 'Heure']],
+body: dataPresents,
+theme: 'grid',
+headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255] },
+bodyStyles: { textColor: [51, 65, 85] }
+});
+currentY = doc.lastAutoTable.finalY + 15;
+} else {
+doc.setFont("helvetica", "italic");
+doc.setFontSize(10);
+doc.text("Aucun pointage enregistré pour le moment.", 14, currentY + 10);
+currentY += 25;
+}
+doc.setFont("helvetica", "bold");
+doc.setFontSize(12);
+doc.setTextColor(185, 28, 28);
+doc.text("RETARDS DU JOUR (Limite : 08H30)", 14, currentY);
+if (dataRetards.length > 0) {
+doc.autoTable({
+startY: currentY + 5,
+head: [['Nom et Prénom', "Heure d'arrivée", 'Temps de retard']],
+body: dataRetards,
+theme: 'grid',
+headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255] },
+bodyStyles: { textColor: [51, 65, 85] }
+});
+} else {
+doc.autoTable({
+startY: currentY + 5,
+head: [['Nom et Prénom', "Heure d'arrivée", 'Temps de retard']],
+body: [['Aucun retard', '-', '-']],
+theme: 'grid',
+headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255] },
+bodyStyles: { textColor: [100, 116, 139], fontStyle: 'italic' }
+});
+}
+doc.save(`Pointage_${aujourdHui.replace(/\//g, '-')}.pdf`);
 });
 });
 
-// --- OUTILS POUR LE CALCUL DES JOURS OUVRÉS / ABSENCES / HEURES ---
 function parseDateFR(dateStr) {
-// Convertit "JJ/MM/AAAA" en objet Date
 const [j, m, a] = dateStr.split('/').map(Number);
 return new Date(a, m - 1, j);
 }
+
 function estJourOuvre(date) {
-const jour = date.getDay(); // 0 = dimanche, 6 = samedi
+const jour = date.getDay();
 return jour !== 0 && jour !== 6;
 }
+
 function parseHeureFR(heureStr) {
-// Convertit "HH:MM:SS" en minutes depuis minuit
 if (!heureStr) return null;
 const parts = heureStr.split(':').map(Number);
 return parts[0] * 60 + parts[1] + (parts[2] || 0) / 60;
 }
+
 function formatHeuresDecimal(minutes) {
 return (minutes / 60).toFixed(2);
 }
-// Construit les 2 feuilles Excel : récapitulatif par employé + détail jour par jour
+
 function construireDonneesExcel(toutesLesDonnees) {
 const parEmploye = {};
 listeNomsEmployes.forEach(nom => { parEmploye[nom] = {}; });
-
 let dateMaxGlobale = null;
 
 toutesLesDonnees.forEach(p => {
 if (!p.date) return;
-
 const nom = p.nom || 'Inconnu';
 if (!parEmploye[nom]) parEmploye[nom] = {};
 if (!parEmploye[nom][p.date]) parEmploye[nom][p.date] = {};
-
 const d = parseDateFR(p.date);
 if (!dateMaxGlobale || d > dateMaxGlobale) dateMaxGlobale = d;
 
 if (p.statut === 'ARRIVÉE' || p.statut === 'ARRIVÉE (RETARD)') {
 parEmploye[nom][p.date].arrivee = p.heure;
 parEmploye[nom][p.date].retard = (p.statut === 'ARRIVÉE (RETARD)');
+parEmploye[nom][p.date].minutesRetard = p.minutesRetard || (p.statut === 'ARRIVÉE (RETARD)' ? calculerMinutesRetard(p.heure) : 0);
 }
-
 if (p.statut === 'DÉPART') {
 parEmploye[nom][p.date].depart = p.heure;
 }
@@ -729,53 +757,38 @@ const recap = [];
 Object.keys(parEmploye).sort((a, b) => a.localeCompare(b)).forEach(nom => {
 const joursEmploye = parEmploye[nom];
 const datesTriees = Object.keys(joursEmploye).sort((a, b) => parseDateFR(a) - parseDateFR(b));
-
-const premiereDate = datesTriees.length > 0
-? parseDateFR(datesTriees[0])
-: dateMaxGlobale;
+const premiereDate = datesTriees.length > 0 ? parseDateFR(datesTriees[0]) : dateMaxGlobale;
 
 let joursTravailles = 0;
 let joursAbsence = 0;
 let nombreRetards = 0;
-let totalMinutesAbsence = 0;
+let totalMinutesRetardCumule = 0;
 
 if (premiereDate && dateMaxGlobale) {
 let d = new Date(premiereDate);
-
 while (d <= dateMaxGlobale) {
 if (estJourOuvre(d)) {
 const dateStr = d.toLocaleDateString('fr-FR');
 const jour = joursEmploye[dateStr];
-
 if (jour && jour.arrivee) {
 joursTravailles++;
+let tempsRetardTexte = "0 min";
 
-if (jour.retard) nombreRetards++;
+if (jour.retard) {
+nombreRetards++;
+const mRetard = jour.minutesRetard || calculerMinutesRetard(jour.arrivee);
+totalMinutesRetardCumule += mRetard;
+tempsRetardTexte = regrouperMinutesEnHeures(mRetard);
+}
 
+let heuresTravaillees = '-';
+if (jour.depart) {
 const minArr = parseHeureFR(jour.arrivee);
 const minDep = parseHeureFR(jour.depart);
-
-let minutesTravaillees = 0;
-let heuresTravaillees = '-';
-let minutesAbsenceJour = 0;
-
-// Absence du matin : tout retard à partir de 08h30
-if (minArr !== null && minArr >= HEURE_ARRIVEE_MAX_MINUTES) {
-minutesAbsenceJour += minArr - HEURE_ARRIVEE_MAX_MINUTES;
-}
-
-// Absence de fin de journée : départ avant 17h00
-if (minDep !== null && minDep < HEURE_DEPART_NORMAL_MINUTES) {
-minutesAbsenceJour += HEURE_DEPART_NORMAL_MINUTES - minDep;
-}
-
-// Heures réellement travaillées
 if (minArr !== null && minDep !== null && minDep > minArr) {
-minutesTravaillees = minDep - minArr;
-heuresTravaillees = formatHeuresDecimal(minutesTravaillees);
+heuresTravaillees = formatHeuresDecimal(minDep - minArr);
 }
-
-totalMinutesAbsence += minutesAbsenceJour;
+}
 
 detailJournalier.push({
 "Nom et Prénom": nom,
@@ -783,57 +796,40 @@ detailJournalier.push({
 "Heure d'arrivée": jour.arrivee,
 "Heure de départ": jour.depart || '-',
 "Heures travaillées": heuresTravaillees,
-"Absence estimée": `${Math.floor(minutesAbsenceJour / 60)}h ${String(Math.round(minutesAbsenceJour % 60)).padStart(2, '0')}min`,
-"Statut": jour.retard ? 'Retard' : 'Présent'
+"Statut": jour.retard ? 'Retard' : 'Présent',
+"Temps de retard (Jour)": tempsRetardTexte
 });
-
 } else {
 joursAbsence++;
-totalMinutesAbsence += HEURES_PAR_JOUR * 60;
-
 detailJournalier.push({
 "Nom et Prénom": nom,
 "Date": dateStr,
 "Heure d'arrivée": '-',
 "Heure de départ": '-',
 "Heures travaillées": '-',
-"Absence estimée": `${HEURES_PAR_JOUR}h 00min`,
-"Statut": 'Absence'
+"Statut": 'Absence',
+"Temps de retard (Jour)": '-'
 });
 }
 }
-
 d.setDate(d.getDate() + 1);
 }
 }
-
-const heuresAbsence = Math.floor(totalMinutesAbsence / 60);
-const minutesAbsence = Math.round(totalMinutesAbsence % 60);
 
 recap.push({
 "Nom et Prénom": nom,
 "Jours travaillés": joursTravailles,
-"Jours ouvrés attendus": (premiereDate && dateMaxGlobale) ? (() => {
-let count = 0;
-let d = new Date(premiereDate);
-while (d <= dateMaxGlobale) {
-if (estJourOuvre(d)) count++;
-d.setDate(d.getDate() + 1);
-}
-return count;
-})() : 0,
 "Jours d'absence": joursAbsence,
-"Heures d'absence estimées": `${heuresAbsence}h ${String(minutesAbsence).padStart(2, '0')}min`,
-"Nombre de retards": nombreRetards
+"Heures d'absence total": joursAbsence * HEURES_PAR_JOUR,
+"Nombre de retards": nombreRetards,
+"Cumul Total Retards": regrouperMinutesEnHeures(totalMinutesRetardCumule)
 });
 });
 
 return { recap, detailJournalier };
 }
 
-// --- EXPORT GLOBAL EXCEL PRO (.xlsx) : Récapitulatif + Détail journalier avec absences ---
 document.getElementById('btnExcelGlobal').addEventListener('click', () => {
-// On combine les pointages actifs (< 24h) et l'historique (> 24h) pour avoir toutes les données
 Promise.all([get(pointagesRef), get(historiqueRef)]).then(([snapPointages, snapHistorique]) => {
 let toutesLesDonnees = [];
 if (snapPointages.exists()) toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapPointages.val()));
@@ -842,31 +838,34 @@ if (toutesLesDonnees.length === 0) {
 afficherNotification("Aucun pointage à exporter.", "erreur");
 return;
 }
+
 const { recap, detailJournalier } = construireDonneesExcel(toutesLesDonnees);
-// Feuille 1 : Récapitulatif par employé (jours et heures d'absence, retards)
+
 const feuilleRecap = XLSX.utils.json_to_sheet(recap);
 feuilleRecap['!cols'] = [
 { wch: 25 },
 { wch: 16 },
-{ wch: 22 },
 { wch: 16 },
-{ wch: 26 },
-{ wch: 18 }
+{ wch: 20 },
+{ wch: 16 },
+{ wch: 22 }
 ];
-// Feuille 2 : Détail jour par jour (arrivée, départ, heures travaillées, statut)
+
 const feuilleDetail = XLSX.utils.json_to_sheet(detailJournalier);
 feuilleDetail['!cols'] = [
-{ wch: 25 }, // Nom
-{ wch: 14 }, // Date
-{ wch: 16 }, // Heure d'arrivée
-{ wch: 16 }, // Heure de départ
-{ wch: 18 }, // Heures travaillées
-{ wch: 20 }, // Absence estimée
-{ wch: 12 } // Statut
+{ wch: 25 },
+{ wch: 14 },
+{ wch: 16 },
+{ wch: 16 },
+{ wch: 18 },
+{ wch: 12 },
+{ wch: 22 }
 ];
+
 const workbook = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(workbook, feuilleRecap, "Récapitulatif");
 XLSX.utils.book_append_sheet(workbook, feuilleDetail, "Détail Journalier");
+
 const nomFichier = `Registre_Pointages_Global_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`;
 XLSX.writeFile(workbook, nomFichier);
 afficherNotification("Fichier Excel professionnel (.xlsx) généré avec succès !", "succes");
