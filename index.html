@@ -160,10 +160,9 @@ return R * c;
 
 function libelleLieuPointage(latitude, longitude) {
 if (!latitude || !longitude) return "GPS non disponible";
-return "KHALIF INGÉNIÉRIE";
+return "Voir plus";
 }
 
-// Fonction utilitaire pour convertir un nombre de minutes en texte clair (ex: 75 min -> "1h 15min")
 function regrouperMinutesEnHeures(minutesTotales) {
 if (!minutesTotales || minutesTotales <= 0) return "0 min";
 const h = Math.floor(minutesTotales / 60);
@@ -173,7 +172,6 @@ if (m === 0) return `${h} h`;
 return `${h}h ${m}min`;
 }
 
-// Calcule les minutes de retard par rapport à 08h30
 function calculerMinutesRetard(heureStr) {
 const minutesPrises = parseHeureFR(heureStr);
 if (minutesPrises === null || minutesPrises <= LIMITE_HEURE_ARRIVEE_MINUTES) {
@@ -334,23 +332,19 @@ pointagesAujourdHuiGlobal.push(p);
 let gpsInfo = '';
 if (p.latitude && p.longitude) {
 const mapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
-const lieu = libelleLieuPointage(p.latitude, p.longitude);
-gpsInfo = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80">${lieu}</a>`;
+gpsInfo = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80">Voir plus</a>`;
 } else {
 gpsInfo = ` <span class="text-gray-400">(GPS non disponible)</span>`;
 }
 let statutBadgeColor = "text-indigo-600 font-semibold";
-let detailRetardTexte = "";
 if (p.statut === "ARRIVÉE (RETARD)") {
 statutBadgeColor = "text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded";
-const minR = p.minutesRetard || calculerMinutesRetard(p.heure);
-detailRetardTexte = ` (+${regrouperMinutesEnHeures(minR)})`;
 } else if (p.statut === "DÉPART") {
 statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded";
 }
 const div = document.createElement('div');
 div.className = "bg-white p-2 rounded border flex justify-between items-center";
-div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}${detailRetardTexte}</span><span class="text-xs ml-1">${gpsInfo}</span></span>
+div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span><span class="text-xs ml-1">${gpsInfo}</span></span>
 <span class="text-gray-500">${p.date} à ${p.heure}</span>`;
 container.appendChild(div);
 });
@@ -365,11 +359,8 @@ if (snapshot.exists()) {
 const data = snapshot.val();
 Object.values(data).reverse().forEach(p => {
 let statutBadgeColor = "text-indigo-600 font-semibold";
-let detailRetardTexte = "";
 if (p.statut === "ARRIVÉE (RETARD)") {
 statutBadgeColor = "text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded";
-const minR = p.minutesRetard || calculerMinutesRetard(p.heure);
-detailRetardTexte = ` (+${regrouperMinutesEnHeures(minR)})`;
 } else if (p.statut === "DÉPART") {
 statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded";
 }
@@ -378,10 +369,9 @@ div.className = "bg-white p-2 rounded border flex justify-between items-center";
 let lieuHisto = '';
 if (p.latitude && p.longitude) {
 const mapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
-const lieu = libelleLieuPointage(p.latitude, p.longitude);
-lieuHisto = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80 text-xs">${lieu}</a>`;
+lieuHisto = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80 text-xs">Voir plus</a>`;
 }
-div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}${detailRetardTexte}</span>${lieuHisto}</span>
+div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span>${lieuHisto}</span>
 <span class="text-gray-500">${p.date} à ${p.heure}</span>`;
 containerHisto.appendChild(div);
 });
@@ -499,9 +489,8 @@ push(pointagesRef, payload).then(() => {
 document.getElementById('formulaireBox').classList.add('hidden');
 const confirmBox = document.getElementById('ecranConfirmation');
 const isRetard = statut.includes('RETARD');
-const retardLisible = regrouperMinutesEnHeures(minutesRetard);
 document.getElementById('confirmTitre').textContent = isRetard ? `Pointage enregistré avec Retard !` : `Pointage (${statut}) validé !`;
-document.getElementById('confirmDetails').innerHTML = `Merci <b>${nom}</b>.<br>Enregistrement effectué à <b>${heureStr}</b> le ${aujourdHuiStr}. ${isRetard ? `<br><span class="text-red-600 font-semibold">(Arrivée après 08h30 : ${retardLisible} de retard)</span>` : ''}`;
+document.getElementById('confirmDetails').innerHTML = `Merci <b>${nom}</b>.<br>Enregistrement effectué à <b>${heureStr}</b> le ${aujourdHuiStr}. ${isRetard ? `<br><span class="text-red-600 font-semibold">(Arrivée après 08h30)</span>` : ''}`;
 confirmBox.classList.remove('hidden');
 setTimeout(() => {
 searchInput.value = '';
