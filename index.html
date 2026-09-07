@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -13,7 +14,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col justify-between">
-
 <!-- En-tête / Navigation / Heure -->
 <div class="max-w-4xl mx-auto px-4 py-6 w-full">
 <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
@@ -26,24 +26,19 @@
 🔒 Espace Admin
 </button>
 </div>
-
 <div class="text-center mb-6">
 <div id="clock" class="text-3xl font-extrabold text-gray-900">--:--:--</div>
 <div id="date" class="text-sm text-gray-500 mt-1">-</div>
 </div>
-
 <!-- ZONE DE NOTIFICATION INTÉGRÉE DANS LA PAGE -->
 <div id="notificationBanner" class="hidden mb-4 p-4 rounded-xl text-center font-medium text-sm transition-all shadow-sm"></div>
-
 <!-- ================= VUE EMPLOYÉ ================= -->
 <div id="vueEmploye" class="space-y-6">
 <div id="formulaireBox" class="bg-white shadow rounded-2xl p-6 border border-gray-100">
-
 <!-- LISTE DÉROULANTE PERSONNALISÉE QUI S'OUVRE TOUJOURS VERS LE BAS -->
 <div class="relative mb-4">
 <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sélectionner ou chercher votre nom</label>
 <input type="text" id="employeSearchInput" placeholder="Tapez votre nom pour filtrer..." class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-
 <!-- Conteneur de la liste vers le bas -->
 <div id="employeDropdownList" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-56 overflow-y-auto z-50">
 <!-- Rempli dynamiquement par JS -->
@@ -51,16 +46,13 @@
 <!-- Champ caché pour stocker la valeur sélectionnée -->
 <input type="hidden" id="employeSelectionne" value="">
 </div>
-
 <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Mot de passe (Par défaut : 0000)</label>
 <input type="password" id="pinInput" placeholder="••••" maxlength="6" class="w-full border border-gray-300 rounded-lg p-3 text-gray-800 bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-6 tracking-widest text-center text-lg">
-
 <div class="grid grid-cols-2 gap-4">
 <button id="btnArrivee" class="bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition shadow">ARRIVÉE</button>
 <button id="btnDepart" class="bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-800 transition shadow">DÉPART</button>
 </div>
 </div>
-
 <!-- Écran de confirmation en plein écran sur la page blanche -->
 <div id="ecranConfirmation" class="hidden bg-white shadow-lg rounded-2xl p-10 border border-indigo-100 text-center space-y-4">
 <div id="confirmIcon" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✓</div>
@@ -69,19 +61,16 @@
 <div class="text-xs text-gray-400 pt-4">Redirection automatique imminente...</div>
 </div>
 </div>
-
 <!-- ================= VUE ADMIN (Cachée par défaut) ================= -->
 <div id="vueAdmin" class="hidden space-y-6">
 <div class="bg-white shadow rounded-2xl p-6 border border-gray-100">
 <h2 class="text-lg font-bold text-gray-800 mb-4">Panneau d'Administration</h2>
-
 <!-- Mot de passe admin -->
 <div id="adminLoginBox" class="space-y-4">
 <p class="text-sm text-gray-600">Entrez le mot de passe administrateur :</p>
 <input type="password" id="adminPassword" placeholder="Mot de passe admin" class="w-full border border-gray-300 rounded-lg p-3">
 <button id="btnAdminLogin" class="bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold w-full">Se connecter</button>
 </div>
-
 <!-- Contenu Admin (affiché après connexion) -->
 <div id="adminContent" class="hidden space-y-6 mt-4">
 <!-- Gestion des employés -->
@@ -92,7 +81,6 @@
 <button id="btnAjouterEmploye" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Ajouter</button>
 </div>
 </div>
-
 <!-- Liste des employés avec option modification de mot de passe & PDF individuel -->
 <div class="border-t pt-4">
 <h3 class="font-semibold text-gray-700 mb-2">Liste des employés & Fiches PIN</h3>
@@ -100,7 +88,6 @@
 <!-- Injecté par JS -->
 </div>
 </div>
-
 <!-- Pointages en temps réel & PDF/Excel Journalier et Global -->
 <div class="border-t pt-4">
 <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
@@ -114,7 +101,6 @@
 <!-- Injecté par JS -->
 </div>
 </div>
-
 <!-- Historique des pointages (archivés automatiquement après 24h) -->
 <div class="border-t pt-4">
 <h3 class="font-semibold text-gray-700 mb-2">Historique des pointages (+ de 24h)</h3>
@@ -122,7 +108,6 @@
 <!-- Injecté par JS -->
 </div>
 </div>
-
 <!-- Modification du mot de passe Admin -->
 <div class="border-t pt-4">
 <h3 class="font-semibold text-gray-700 mb-2">Sécurité : Modifier le mot de passe Admin</h3>
@@ -134,14 +119,11 @@
 </div>
 </div>
 </div>
-
 </div>
-
 <!-- Scripts Firebase et Logique Métier -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, get, remove, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
 const firebaseConfig = {
 apiKey: "AIzaSyDQzystm4eWC2_8fdWoLHFThThhM3cwq0",
 authDomain: "pointage-khalif.firebaseapp.com",
@@ -152,19 +134,36 @@ messagingSenderId: "568693399015",
 appId: "1:568693399015:web:d9097c0d29dd5ae6e5b142",
 measurementId: "G-XM50BF3EP0"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const employesRef = ref(db, 'employes');
 const pointagesRef = ref(db, 'pointages');
 const historiqueRef = ref(db, 'historique');
 const adminPassRef = ref(db, 'admin/password');
-
 // Nombre d'heures de travail considéré pour un jour ouvré (utilisé pour le calcul des absences)
 const HEURES_PAR_JOUR = 8;
-// Durée après laquelle un pointage est basculé de "pointages" vers "historique"
-const DELAI_ARCHIVAGE_MS = 24 * 60 * 60 * 1000; // 24h
-
+const HEURE_ARRIVEE_MAX_MINUTES = 8 * 60 + 30; // 08h30
+const HEURE_DEPART_NORMAL_MINUTES = 17 * 60;   // 17h00
+// Coordonnées GPS du bureau Khalif Ingénierie et rayon de tolérance (imprécision GPS incluse)
+const OFFICE_LAT = 5.339317;
+const OFFICE_LNG = -4.055416;
+const RAYON_TOLERANCE_METRES = 10;
+// Calcule la distance en mètres entre 2 points GPS (formule de Haversine)
+function calculerDistanceMetres(lat1, lon1, lat2, lon2) {
+const R = 6371000; // rayon de la Terre en mètres
+const toRad = (deg) => deg * Math.PI / 180;
+const dLat = toRad(lat2 - lat1);
+const dLon = toRad(lon2 - lon1);
+const a = Math.sin(dLat / 2) ** 2 +
+Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+return R * c;
+}
+// Retourne le nom du bureau pour un pointage donné (seuls les pointages dans la zone sont enregistrés)
+function libelleLieuPointage(latitude, longitude) {
+if (latitude == null || longitude == null) return "GPS non disponible";
+return `GPS : ${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}`;
+}
 // Liste initiale complète des 20 employés
 const listeInitialeEmployes = [
 "Khalif", "Anani Ulrich", "Jean", "ASSALE Anabelle", "BOKA Axel",
@@ -174,11 +173,9 @@ const listeInitialeEmployes = [
 "WAYOU Claude Sostherne", "ADOPO Jorim", "TAPE Marie-Emmanuelle",
 "CAMARA Alpha", "KOFFI Israel", "OPKO Michel"
 ];
-
 // Injection intelligente : Ajoute les noms manquants sans supprimer les existants
 get(employesRef).then((snapshot) => {
 const employesActuels = snapshot.exists() ? Object.values(snapshot.val()).map(e => e.nom) : [];
-
 listeInitialeEmployes.forEach(nom => {
 if (!employesActuels.includes(nom)) {
 const newRef = push(employesRef);
@@ -186,21 +183,19 @@ set(newRef, { nom: nom, pin: "0000" });
 }
 });
 });
-
 get(adminPassRef).then((snapshot) => {
 if (!snapshot.exists()) {
 set(adminPassRef, "admin123");
 }
 });
-
-// --- ARCHIVAGE AUTOMATIQUE DES POINTAGES DE PLUS DE 24H ---
+// --- ARCHIVAGE AUTOMATIQUE DES POINTAGES QUI NE SONT PLUS D'AUJOURD'HUI ---
 function archiverAnciensPointages() {
   get(pointagesRef).then((snapshot) => {
     if (!snapshot.exists()) return;
-    const maintenant = Date.now();
+    const aujourdHui = new Date().toLocaleDateString('fr-FR');
     const data = snapshot.val();
     Object.entries(data).forEach(([key, p]) => {
-      if (p.timestamp && (maintenant - p.timestamp) > DELAI_ARCHIVAGE_MS) {
+      if (p.date && p.date !== aujourdHui) {
         // On copie d'abord vers l'historique, puis on supprime seulement si la copie a réussi
         set(ref(db, `historique/${key}`), p).then(() => {
           remove(ref(db, `pointages/${key}`));
@@ -210,9 +205,9 @@ function archiverAnciensPointages() {
   });
 }
 // On archive au chargement de la page, puis on revérifie toutes les heures
+// (utile pour basculer automatiquement les pointages de la veille dès le changement de jour)
 archiverAnciensPointages();
 setInterval(archiverAnciensPointages, 60 * 60 * 1000);
-
 function afficherNotification(message, type = 'erreur') {
 const banner = document.getElementById('notificationBanner');
 banner.textContent = message;
@@ -222,35 +217,27 @@ type === 'succes' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-r
 banner.classList.remove('hidden');
 setTimeout(() => banner.classList.add('hidden'), 4000);
 }
-
 setInterval(() => {
 const now = new Date();
 document.getElementById('clock').textContent = now.toLocaleTimeString('fr-FR');
 document.getElementById('date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }, 1000);
-
 let donneesEmployesGlobal = {};
 let listeNomsEmployes = [];
 let pointagesAujourdHuiGlobal = [];
-
 onValue(employesRef, (snapshot) => {
 const adminListe = document.getElementById('adminListeEmployes');
 if(adminListe) adminListe.innerHTML = '';
 listeNomsEmployes = [];
-
 if (snapshot.exists()) {
 donneesEmployesGlobal = snapshot.val();
 let employesArray = [];
-
 Object.keys(donneesEmployesGlobal).forEach((key) => {
 employesArray.push({ key: key, ...donneesEmployesGlobal[key] });
 });
-
 employesArray.sort((a, b) => a.nom.localeCompare(b.nom));
-
 employesArray.forEach((emp) => {
 listeNomsEmployes.push(emp.nom);
-
 if(adminListe) {
 const div = document.createElement('div');
 div.className = "bg-white p-3 border rounded-lg space-y-2";
@@ -271,18 +258,14 @@ adminListe.appendChild(div);
 });
 }
 });
-
 // --- GESTION DE LA LISTE DÉROULANTE VERS LE BAS (CUSTOM) ---
 const searchInput = document.getElementById('employeSearchInput');
 const dropdownList = document.getElementById('employeDropdownList');
 const hiddenInput = document.getElementById('employeSelectionne');
-
 function afficherDropdown(filtre = "") {
 dropdownList.innerHTML = "";
 const motsFiltre = filtre.toLowerCase();
-
 const resultats = listeNomsEmployes.filter(nom => nom.toLowerCase().includes(motsFiltre));
-
 if (resultats.length === 0) {
 dropdownList.innerHTML = '<div class="p-3 text-sm text-gray-400 text-center">Aucun employé trouvé</div>';
 } else {
@@ -300,52 +283,44 @@ dropdownList.appendChild(item);
 }
 dropdownList.classList.remove('hidden');
 }
-
 searchInput.addEventListener('focus', () => {
 afficherDropdown(searchInput.value);
 });
-
 searchInput.addEventListener('input', (e) => {
 hiddenInput.value = ""; // Réinitialise si l'utilisateur modifie à la main
 afficherDropdown(e.target.value);
 });
-
 // Fermer la liste si on clique en dehors
 document.addEventListener('click', (e) => {
 if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
 dropdownList.classList.add('hidden');
 }
 });
-
-
 onValue(pointagesRef, (snapshot) => {
 const container = document.getElementById('adminListePointages');
 container.innerHTML = '';
 pointagesAujourdHuiGlobal = [];
 const aujourdHuiStr = new Date().toLocaleDateString('fr-FR');
-
 if (snapshot.exists()) {
 const data = snapshot.val();
 Object.values(data).reverse().forEach(p => {
 if (p.date === aujourdHuiStr) {
 pointagesAujourdHuiGlobal.push(p);
 }
-
 let gpsInfo = '';
 if (p.latitude && p.longitude) {
 const mapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
-gpsInfo = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-indigo-600 underline font-medium hover:text-indigo-800">Voir sur la carte</a>`;
+const lieu = libelleLieuPointage(p.latitude, p.longitude);
+gpsInfo = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80">${lieu}</a>`;
 } else {
 gpsInfo = ` <span class="text-gray-400">(GPS non disponible)</span>`;
 }
-
 let statutBadgeColor = "text-indigo-600 font-semibold";
 if (p.statut === "ARRIVÉE (RETARD)") {
 statutBadgeColor = "text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded";
 } else if (p.statut === "DÉPART") {
 statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounded";
 }
-
 const div = document.createElement('div');
 div.className = "bg-white p-2 rounded border flex justify-between items-center";
 div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span><span class="text-xs ml-1">${gpsInfo}</span></span>
@@ -354,13 +329,11 @@ container.appendChild(div);
 });
 }
 });
-
 // --- AFFICHAGE DE L'HISTORIQUE (pointages archivés après 24h) ---
 onValue(historiqueRef, (snapshot) => {
 const containerHisto = document.getElementById('adminListeHistorique');
 if (!containerHisto) return;
 containerHisto.innerHTML = '';
-
 if (snapshot.exists()) {
 const data = snapshot.val();
 Object.values(data).reverse().forEach(p => {
@@ -372,7 +345,13 @@ statutBadgeColor = "text-gray-700 font-semibold bg-gray-100 px-1.5 py-0.5 rounde
 }
 const div = document.createElement('div');
 div.className = "bg-white p-2 rounded border flex justify-between items-center";
-div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span></span>
+let lieuHisto = '';
+if (p.latitude && p.longitude) {
+const mapsUrl = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
+const lieu = libelleLieuPointage(p.latitude, p.longitude);
+lieuHisto = ` 📍 <a href="${mapsUrl}" target="_blank" class="text-emerald-600 underline font-medium hover:opacity-80 text-xs">${lieu}</a>`;
+}
+div.innerHTML = `<span><b>${p.nom || 'Inconnu'}</b> - <span class="${statutBadgeColor}">${p.statut}</span>${lieuHisto}</span>
 <span class="text-gray-500">${p.date} à ${p.heure}</span>`;
 containerHisto.appendChild(div);
 });
@@ -380,10 +359,8 @@ containerHisto.appendChild(div);
 containerHisto.innerHTML = '<div class="p-3 text-sm text-gray-400 text-center">Aucun historique pour le moment</div>';
 }
 });
-
 document.getElementById('btnArrivee').addEventListener('click', () => effectuerPointage('ARRIVÉE'));
 document.getElementById('btnDepart').addEventListener('click', () => effectuerPointage('DÉPART'));
-
 function effectuerPointage(statutDemande) {
 // Récupère depuis le champ caché ou le texte saisi s'il correspond exactement
 let nom = hiddenInput.value.trim();
@@ -393,36 +370,29 @@ if (listeNomsEmployes.includes(saisieExacte)) {
 nom = saisieExacte;
 }
 }
-
 const pinSaisi = document.getElementById('pinInput').value.trim();
-
 if (!nom) {
 afficherNotification("Veuillez sélectionner votre nom dans la liste.", "erreur");
 return;
 }
-
 if (!pinSaisi) {
 afficherNotification("Veuillez entrer votre mot de passe (PIN).", "erreur");
 return;
 }
-
 let bonPin = "0000";
 Object.values(donneesEmployesGlobal).forEach(emp => {
 if (emp.nom === nom) {
 bonPin = emp.pin || "0000";
 }
 });
-
 if (pinSaisi !== bonPin) {
 afficherNotification("Mot de passe incorrect pour cet employé.", "erreur");
 return;
 }
-
 const aujourdHuiStr = new Date().toLocaleDateString('fr-FR');
 let dejaArriveAujourdHui = false;
 let dejaDepartAujourdHui = false;
 let aSonArriveeCeJour = false;
-
 pointagesAujourdHuiGlobal.forEach(p => {
 if (p.nom === nom) {
 if (p.statut === 'ARRIVÉE' || p.statut === 'ARRIVÉE (RETARD)') {
@@ -434,52 +404,49 @@ dejaDepartAujourdHui = true;
 }
 }
 });
-
 if (statutDemande === 'ARRIVÉE' && dejaArriveAujourdHui) {
 afficherNotification("Vous avez déjà enregistré votre ARRIVÉE aujourd'hui.", "erreur");
 return;
 }
-
 if (statutDemande === 'DÉPART' && dejaDepartAujourdHui) {
 afficherNotification("Vous avez déjà enregistré votre DÉPART aujourd'hui.", "erreur");
 return;
 }
-
 if (statutDemande === 'DÉPART' && !aSonArriveeCeJour) {
 afficherNotification("Vous devez enregistrer votre ARRIVÉE avant de pointer votre DÉPART.", "erreur");
 return;
 }
-
 let statutFinal = statutDemande;
 if (statutDemande === 'ARRIVÉE') {
 const nowCheck = new Date();
 const totalMinutesActuelles = nowCheck.getHours() * 60 + nowCheck.getMinutes();
-const limiteMinutes = 8 * 60 + 30; // 08:30
-
-if (totalMinutesActuelles > limiteMinutes) {
+const limiteMinutes = HEURE_ARRIVEE_MAX_MINUTES; // 08:30
+if (totalMinutesActuelles >= limiteMinutes) {
 statutFinal = 'ARRIVÉE (RETARD)';
 }
 }
-
 if (navigator.geolocation) {
 navigator.geolocation.getCurrentPosition(
 (position) => {
+const distance = calculerDistanceMetres(position.coords.latitude, position.coords.longitude, OFFICE_LAT, OFFICE_LNG);
+if (distance > RAYON_TOLERANCE_METRES) {
+afficherNotification(`Pointage refusé : vous êtes à environ ${Math.round(distance)}m du bureau (zone autorisée : ${RAYON_TOLERANCE_METRES}m).`, "erreur");
+return;
+}
 sauvegarderPointageFirebase(statutFinal, nom, aujourdHuiStr, position.coords.latitude, position.coords.longitude);
 },
 (error) => {
-sauvegarderPointageFirebase(statutFinal, nom, aujourdHuiStr, null, null);
+afficherNotification("Localisation impossible : activez le GPS pour pouvoir pointer.", "erreur");
 },
 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
 );
 } else {
-sauvegarderPointageFirebase(statutFinal, nom, aujourdHuiStr, null, null);
+afficherNotification("Votre appareil ne supporte pas la géolocalisation, le pointage est impossible.", "erreur");
 }
 }
-
 function sauvegarderPointageFirebase(statut, nom, aujourdHuiStr, lat, lon) {
 const now = new Date();
 const heureStr = now.toLocaleTimeString('fr-FR');
-
 const payload = {
 nom: nom,
 statut: statut,
@@ -487,22 +454,17 @@ date: aujourdHuiStr,
 heure: heureStr,
 timestamp: Date.now()
 };
-
 if (lat !== null && lon !== null) {
 payload.latitude = lat;
 payload.longitude = lon;
 }
-
 push(pointagesRef, payload).then(() => {
 document.getElementById('formulaireBox').classList.add('hidden');
 const confirmBox = document.getElementById('ecranConfirmation');
 const isRetard = statut.includes('RETARD');
-
 document.getElementById('confirmTitre').textContent = isRetard ? `Pointage enregistré avec Retard !` : `Pointage (${statut}) validé !`;
 document.getElementById('confirmDetails').innerHTML = `Merci <b>${nom}</b>.<br>Enregistrement effectué à <b>${heureStr}</b> le ${aujourdHuiStr}. ${isRetard ? '<br><span class="text-red-600 font-semibold">(Arrivée après 08h30 : Retard notifié)</span>' : ''}`;
-
 confirmBox.classList.remove('hidden');
-
 setTimeout(() => {
 searchInput.value = '';
 hiddenInput.value = '';
@@ -514,11 +476,9 @@ document.getElementById('formulaireBox').classList.remove('hidden');
 afficherNotification("Erreur de connexion : " + error.message, "erreur");
 });
 }
-
 const btnToggleAdmin = document.getElementById('btnToggleAdmin');
 const vueEmploye = document.getElementById('vueEmploye');
 const vueAdmin = document.getElementById('vueAdmin');
-
 btnToggleAdmin.addEventListener('click', () => {
 if (vueAdmin.classList.contains('hidden')) {
 vueAdmin.classList.remove('hidden');
@@ -530,7 +490,6 @@ vueEmploye.classList.remove('hidden');
 btnToggleAdmin.textContent = "🔒 Espace Admin";
 }
 });
-
 document.getElementById('btnAdminLogin').addEventListener('click', () => {
 const pwdSaisi = document.getElementById('adminPassword').value;
 get(adminPassRef).then((snapshot) => {
@@ -544,7 +503,6 @@ afficherNotification("Mot de passe administrateur incorrect.", "erreur");
 }
 });
 });
-
 document.getElementById('btnChangerPasswordAdmin').addEventListener('click', () => {
 const nouveauMdp = document.getElementById('nouveauPasswordAdmin').value.trim();
 if (!nouveauMdp) {
@@ -556,7 +514,6 @@ document.getElementById('nouveauPasswordAdmin').value = '';
 afficherNotification("Mot de passe administrateur mis à jour avec succès !", "succes");
 });
 });
-
 document.getElementById('btnAjouterEmploye').addEventListener('click', () => {
 const nom = document.getElementById('nouveauNom').value.trim();
 if(nom) {
@@ -569,47 +526,38 @@ afficherNotification("Employé ajouté avec succès (PIN par défaut : 0000) !",
 afficherNotification("Veuillez entrer un nom valide.", "erreur");
 }
 });
-
 window.supprimerEmploye = function(key) {
 remove(ref(db, `employes/${key}`)).then(() => {
 afficherNotification("Employé supprimé avec succès.", "succes");
 });
 };
-
 window.changerPinEmploye = function(key, nom) {
 const nouveauPinInput = document.getElementById(`nouveauPin_${key}`);
 const nouveauPin = nouveauPinInput.value.trim();
-
 if (!nouveauPin) {
 afficherNotification("Veuillez saisir un nouveau mot de passe.", "erreur");
 return;
 }
-
 update(ref(db, `employes/${key}`), { pin: nouveauPin }).then(() => {
 nouveauPinInput.value = '';
 afficherNotification(`Mot de passe de ${nom} mis à jour avec succès !`, "succes");
 });
 };
-
 // ==========================================
 // --- DESIGN DES PDF PROFESSIONNELS ---
 // ==========================================
-
 window.genererPdfEmploye = function(nom, pin) {
 const { jsPDF } = window.jspdf;
 const doc = new jsPDF();
-
 doc.setFillColor(79, 70, 229);
 doc.rect(0, 0, 210, 25, 'F');
 doc.setTextColor(255, 255, 255);
 doc.setFont("helvetica", "bold");
 doc.setFontSize(14);
 doc.text("KHALIF INGÉNIERIE", 14, 16);
-
 doc.setTextColor(30, 41, 59);
 doc.setFontSize(16);
 doc.text("FICHE D'IDENTIFIANT EMPLOYÉ", 14, 40);
-
 doc.autoTable({
 startY: 50,
 head: [['Information Salarié', 'Valeur / Paramètre']],
@@ -623,31 +571,48 @@ headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: '
 bodyStyles: { textColor: [51, 65, 85] },
 alternateRowStyles: { fillColor: [248, 250, 252] }
 });
-
 doc.setDrawColor(203, 213, 225);
 doc.setFillColor(241, 245, 249);
 doc.roundedRect(14, doc.lastAutoTable.finalY + 15, 182, 25, 3, 3, 'FD');
-
 doc.setFont("helvetica", "bold");
 doc.setFontSize(10);
 doc.setTextColor(71, 85, 105);
 doc.text("CONSIGNES DE SÉCURITÉ :", 18, doc.lastAutoTable.finalY + 23);
-
 doc.setFont("helvetica", "normal");
 doc.setFontSize(9);
 doc.text("Veuillez conserver précieusement ce code PIN. Il vous est personnellement requis pour\neffectuer vos pointages d'arrivée et de départ sur la plateforme de l'entreprise.", 18, doc.lastAutoTable.finalY + 30);
-
 doc.save(`Fiche_${nom.replace(/\s+/g, '_')}.pdf`);
 };
-
 document.getElementById('btnPdfJour').addEventListener('click', () => {
-get(pointagesRef).then((snapshot) => {
+Promise.all([get(pointagesRef), get(historiqueRef)]).then(([snapPointages, snapHistorique]) => {
+let toutesLesDonnees = [];
+
+if (snapPointages.exists()) {
+toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapPointages.val()));
+}
+
+if (snapHistorique.exists()) {
+toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapHistorique.val()));
+}
+
+if (toutesLesDonnees.length === 0) {
+afficherNotification("Aucun pointage à exporter.", "erreur");
+return;
+}
+
+const { recap } = construireDonneesExcel(toutesLesDonnees);
 const { jsPDF } = window.jspdf;
-const doc = new jsPDF();
+const doc = new jsPDF({
+orientation: 'landscape',
+unit: 'mm',
+format: 'a4'
+});
+
 const aujourdHui = new Date().toLocaleDateString('fr-FR');
 
 doc.setFillColor(79, 70, 229);
-doc.rect(0, 0, 210, 25, 'F');
+doc.rect(0, 0, 297, 25, 'F');
+
 doc.setTextColor(255, 255, 255);
 doc.setFont("helvetica", "bold");
 doc.setFontSize(14);
@@ -655,79 +620,60 @@ doc.text("KHALIF INGÉNIERIE", 14, 16);
 
 doc.setTextColor(30, 41, 59);
 doc.setFontSize(16);
-doc.text("RAPPORT JOURNALIER DE POINTAGE", 14, 40);
+doc.text("RÉCAPITULATIF DES POINTAGES", 14, 40);
 
 doc.setFont("helvetica", "normal");
-doc.setFontSize(11);
+doc.setFontSize(10);
 doc.setTextColor(100, 116, 139);
 doc.text(`Date de l'édition : ${aujourdHui}`, 14, 48);
 
-let dataPresents = [];
-let dataRetards = [];
+const corps = recap.map(r => [
+r["Nom et Prénom"],
+r["Jours travaillés"],
+r["Jours ouvrés attendus"],
+r["Jours d'absence"],
+r["Heures d'absence estimées"],
+r["Nombre de retards"]
+]);
 
-if (snapshot.exists()) {
-const data = snapshot.val();
-Object.values(data).forEach(p => {
-if(p.date === aujourdHui) {
-if (p.statut === "ARRIVÉE (RETARD)") {
-dataRetards.push([p.nom || 'Inconnu', p.heure, "Arrivée après 08h30"]);
-} else {
-dataPresents.push([p.nom || 'Inconnu', p.statut, p.heure]);
-}
-}
-});
-}
-
-let currentY = 60;
-
-doc.setFont("helvetica", "bold");
-doc.setFontSize(12);
-doc.setTextColor(30, 41, 59);
-doc.text("PRÉSENCES ET MOUVEMENTS ENREGISTRÉS", 14, currentY);
-
-if (dataPresents.length > 0) {
 doc.autoTable({
-startY: currentY + 5,
-head: [['Nom et Prénom', 'Mouvement', 'Heure']],
-body: dataPresents,
+startY: 56,
+head: [[
+"Nom et Prénom",
+"Jours travaillés",
+"Jours ouvrés attendus",
+"Jours d'absence",
+"Heures d'absence estimées",
+"Nombre de retards"
+]],
+body: corps,
 theme: 'grid',
-headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255] },
-bodyStyles: { textColor: [51, 65, 85] }
-});
-currentY = doc.lastAutoTable.finalY + 15;
-} else {
-doc.setFont("helvetica", "italic");
-doc.setFontSize(10);
-doc.text("Aucun pointage enregistré pour le moment.", 14, currentY + 10);
-currentY += 25;
+styles: {
+fontSize: 8,
+cellPadding: 3,
+halign: 'center',
+valign: 'middle'
+},
+headStyles: {
+fillColor: [79, 70, 229],
+textColor: [255, 255, 255],
+fontStyle: 'bold',
+halign: 'center'
+},
+columnStyles: {
+0: { halign: 'left', cellWidth: 55 },
+1: { cellWidth: 32 },
+2: { cellWidth: 40 },
+3: { cellWidth: 32 },
+4: { cellWidth: 45 },
+5: { cellWidth: 32 }
 }
-
-doc.setFont("helvetica", "bold");
-doc.setFontSize(12);
-doc.setTextColor(185, 28, 28);
-doc.text("RETARDS DU JOUR (Limite : 08H30)", 14, currentY);
-
-if (dataRetards.length > 0) {
-doc.autoTable({
-startY: currentY + 5,
-head: [['Nom et Prénom', "Heure d'arrivée", 'Motif']],
-body: dataRetards,
-theme: 'grid',
-headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255] },
-bodyStyles: { textColor: [51, 65, 85] }
 });
-} else {
-doc.autoTable({
-startY: currentY + 5,
-head: [['Nom et Prénom', "Heure d'arrivée", 'Motif']],
-body: [['Aucun retard', '-', '-']],
-theme: 'grid',
-headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255] },
-bodyStyles: { textColor: [100, 116, 139], fontStyle: 'italic' }
-});
-}
 
-doc.save(`Pointage_${aujourdHui.replace(/\//g, '-')}.pdf`);
+doc.save(`Recapitulatif_Pointages_${aujourdHui.replace(/\//g, '-')}.pdf`);
+afficherNotification("PDF récapitulatif généré avec succès !", "succes");
+}).catch(error => {
+afficherNotification("Erreur lors de la génération du PDF : " + error.message, "erreur");
 });
 });
 
@@ -737,26 +683,21 @@ function parseDateFR(dateStr) {
 const [j, m, a] = dateStr.split('/').map(Number);
 return new Date(a, m - 1, j);
 }
-
 function estJourOuvre(date) {
 const jour = date.getDay(); // 0 = dimanche, 6 = samedi
 return jour !== 0 && jour !== 6;
 }
-
 function parseHeureFR(heureStr) {
 // Convertit "HH:MM:SS" en minutes depuis minuit
 if (!heureStr) return null;
 const parts = heureStr.split(':').map(Number);
 return parts[0] * 60 + parts[1] + (parts[2] || 0) / 60;
 }
-
 function formatHeuresDecimal(minutes) {
 return (minutes / 60).toFixed(2);
 }
-
 // Construit les 2 feuilles Excel : récapitulatif par employé + détail jour par jour
 function construireDonneesExcel(toutesLesDonnees) {
-// 1. Regroupe les pointages par employé puis par date (arrivée / départ)
 const parEmploye = {};
 listeNomsEmployes.forEach(nom => { parEmploye[nom] = {}; });
 
@@ -764,6 +705,7 @@ let dateMaxGlobale = null;
 
 toutesLesDonnees.forEach(p => {
 if (!p.date) return;
+
 const nom = p.nom || 'Inconnu';
 if (!parEmploye[nom]) parEmploye[nom] = {};
 if (!parEmploye[nom][p.date]) parEmploye[nom][p.date] = {};
@@ -775,6 +717,7 @@ if (p.statut === 'ARRIVÉE' || p.statut === 'ARRIVÉE (RETARD)') {
 parEmploye[nom][p.date].arrivee = p.heure;
 parEmploye[nom][p.date].retard = (p.statut === 'ARRIVÉE (RETARD)');
 }
+
 if (p.statut === 'DÉPART') {
 parEmploye[nom][p.date].depart = p.heure;
 }
@@ -786,13 +729,19 @@ const recap = [];
 Object.keys(parEmploye).sort((a, b) => a.localeCompare(b)).forEach(nom => {
 const joursEmploye = parEmploye[nom];
 const datesTriees = Object.keys(joursEmploye).sort((a, b) => parseDateFR(a) - parseDateFR(b));
-// La période comptée pour un employé démarre à son 1er pointage jamais enregistré
-const premiereDate = datesTriees.length > 0 ? parseDateFR(datesTriees[0]) : dateMaxGlobale;
 
-let joursTravailles = 0, joursAbsence = 0, nombreRetards = 0;
+const premiereDate = datesTriees.length > 0
+? parseDateFR(datesTriees[0])
+: dateMaxGlobale;
+
+let joursTravailles = 0;
+let joursAbsence = 0;
+let nombreRetards = 0;
+let totalMinutesAbsence = 0;
 
 if (premiereDate && dateMaxGlobale) {
 let d = new Date(premiereDate);
+
 while (d <= dateMaxGlobale) {
 if (estJourOuvre(d)) {
 const dateStr = d.toLocaleDateString('fr-FR');
@@ -800,16 +749,33 @@ const jour = joursEmploye[dateStr];
 
 if (jour && jour.arrivee) {
 joursTravailles++;
+
 if (jour.retard) nombreRetards++;
 
-let heuresTravaillees = '-';
-if (jour.depart) {
 const minArr = parseHeureFR(jour.arrivee);
 const minDep = parseHeureFR(jour.depart);
+
+let minutesTravaillees = 0;
+let heuresTravaillees = '-';
+let minutesAbsenceJour = 0;
+
+// Absence du matin : tout retard à partir de 08h30
+if (minArr !== null && minArr >= HEURE_ARRIVEE_MAX_MINUTES) {
+minutesAbsenceJour += minArr - HEURE_ARRIVEE_MAX_MINUTES;
+}
+
+// Absence de fin de journée : départ avant 17h00
+if (minDep !== null && minDep < HEURE_DEPART_NORMAL_MINUTES) {
+minutesAbsenceJour += HEURE_DEPART_NORMAL_MINUTES - minDep;
+}
+
+// Heures réellement travaillées
 if (minArr !== null && minDep !== null && minDep > minArr) {
-heuresTravaillees = formatHeuresDecimal(minDep - minArr);
+minutesTravaillees = minDep - minArr;
+heuresTravaillees = formatHeuresDecimal(minutesTravaillees);
 }
-}
+
+totalMinutesAbsence += minutesAbsenceJour;
 
 detailJournalier.push({
 "Nom et Prénom": nom,
@@ -817,29 +783,47 @@ detailJournalier.push({
 "Heure d'arrivée": jour.arrivee,
 "Heure de départ": jour.depart || '-',
 "Heures travaillées": heuresTravaillees,
+"Absence estimée": `${Math.floor(minutesAbsenceJour / 60)}h ${String(Math.round(minutesAbsenceJour % 60)).padStart(2, '0')}min`,
 "Statut": jour.retard ? 'Retard' : 'Présent'
 });
+
 } else {
 joursAbsence++;
+totalMinutesAbsence += HEURES_PAR_JOUR * 60;
+
 detailJournalier.push({
 "Nom et Prénom": nom,
 "Date": dateStr,
 "Heure d'arrivée": '-',
 "Heure de départ": '-',
 "Heures travaillées": '-',
+"Absence estimée": `${HEURES_PAR_JOUR}h 00min`,
 "Statut": 'Absence'
 });
 }
 }
+
 d.setDate(d.getDate() + 1);
 }
 }
 
+const heuresAbsence = Math.floor(totalMinutesAbsence / 60);
+const minutesAbsence = Math.round(totalMinutesAbsence % 60);
+
 recap.push({
 "Nom et Prénom": nom,
 "Jours travaillés": joursTravailles,
+"Jours ouvrés attendus": (premiereDate && dateMaxGlobale) ? (() => {
+let count = 0;
+let d = new Date(premiereDate);
+while (d <= dateMaxGlobale) {
+if (estJourOuvre(d)) count++;
+d.setDate(d.getDate() + 1);
+}
+return count;
+})() : 0,
 "Jours d'absence": joursAbsence,
-"Heures d'absence total": joursAbsence * HEURES_PAR_JOUR,
+"Heures d'absence estimées": `${heuresAbsence}h ${String(minutesAbsence).padStart(2, '0')}min`,
 "Nombre de retards": nombreRetards
 });
 });
@@ -854,24 +838,21 @@ Promise.all([get(pointagesRef), get(historiqueRef)]).then(([snapPointages, snapH
 let toutesLesDonnees = [];
 if (snapPointages.exists()) toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapPointages.val()));
 if (snapHistorique.exists()) toutesLesDonnees = toutesLesDonnees.concat(Object.values(snapHistorique.val()));
-
 if (toutesLesDonnees.length === 0) {
 afficherNotification("Aucun pointage à exporter.", "erreur");
 return;
 }
-
 const { recap, detailJournalier } = construireDonneesExcel(toutesLesDonnees);
-
 // Feuille 1 : Récapitulatif par employé (jours et heures d'absence, retards)
 const feuilleRecap = XLSX.utils.json_to_sheet(recap);
 feuilleRecap['!cols'] = [
-{ wch: 25 }, // Nom
-{ wch: 16 }, // Jours travaillés
-{ wch: 16 }, // Jours d'absence
-{ wch: 20 }, // Heures d'absence total
-{ wch: 16 } // Retards
+{ wch: 25 },
+{ wch: 16 },
+{ wch: 22 },
+{ wch: 16 },
+{ wch: 26 },
+{ wch: 18 }
 ];
-
 // Feuille 2 : Détail jour par jour (arrivée, départ, heures travaillées, statut)
 const feuilleDetail = XLSX.utils.json_to_sheet(detailJournalier);
 feuilleDetail['!cols'] = [
@@ -880,16 +861,14 @@ feuilleDetail['!cols'] = [
 { wch: 16 }, // Heure d'arrivée
 { wch: 16 }, // Heure de départ
 { wch: 18 }, // Heures travaillées
+{ wch: 20 }, // Absence estimée
 { wch: 12 } // Statut
 ];
-
 const workbook = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(workbook, feuilleRecap, "Récapitulatif");
 XLSX.utils.book_append_sheet(workbook, feuilleDetail, "Détail Journalier");
-
 const nomFichier = `Registre_Pointages_Global_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.xlsx`;
 XLSX.writeFile(workbook, nomFichier);
-
 afficherNotification("Fichier Excel professionnel (.xlsx) généré avec succès !", "succes");
 });
 });
